@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { DefaultAddons, maybeDownloadAddons } from './addons.js';
 import { ALLOW_GEOIP, downloadMMDB, removeMMDB } from './locale.js';
 import { INSTALL_DIR, CamoufoxFetcher, installedVerStr } from './pkgman.js';
