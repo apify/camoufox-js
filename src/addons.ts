@@ -2,6 +2,7 @@ import { InvalidAddonPath } from './exceptions.js';
 import { getPath, unzip, webdl } from './pkgman.js';
 import fs from 'fs';
 import { join } from 'path';
+import { getAsBooleanFromENV } from './utils.js';
 
 export const DefaultAddons = {
     /**
@@ -60,6 +61,11 @@ function getAddonPath(addonName: string): string {
 export function maybeDownloadAddons(
     addons: Record<string, string>, addonsList: string[] = []
 ): void {
+    if (getAsBooleanFromENV('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', false)) {
+        console.log("Skipping addon download due to PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD set!");
+        return
+    }
+
     for (const addonName in addons) {
         const addonPath = getAddonPath(addonName);
 
