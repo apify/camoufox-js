@@ -63,6 +63,14 @@ function getEnvVars(configMap: ConfigMap, userAgentOS: string): EnvVars {
     return envVars;
 }
 
+export function getAsBooleanFromENV(name: string, defaultValue?: boolean | undefined): boolean {
+    const value = process.env[name];
+    if (value === 'false' || value === '0')
+        return false;
+    if (value)
+        return true;
+    return !!defaultValue;
+}
 
 interface Property {
     property: string;

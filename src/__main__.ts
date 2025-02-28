@@ -7,6 +7,7 @@ import { Command } from 'commander';
 
 import { Camoufox } from './sync_api.js';
 import { existsSync, fstat, rmSync } from 'fs';
+import { getAsBooleanFromENV } from './utils.js';
 
 class CamoufoxUpdate extends CamoufoxFetcher {
     currentVerStr: string | null;
@@ -32,13 +33,12 @@ class CamoufoxUpdate extends CamoufoxFetcher {
     }
 
     isUpdateNeeded(): boolean {
-        if (this.currentVerStr === null) {
-            return true;
+        if (getAsBooleanFromENV('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', false)) {
+            console.log("Skipping browser download / update check due to PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD set!");
+            return false;
         }
-        if (this.currentVerStr !== this.verstr) {
-            return true;
-        }
-        return false;
+
+        return this.currentVerStr === null || this.currentVerStr !== this.verstr;
     }
 
     async update(): Promise<void> {

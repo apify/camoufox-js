@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import maxmind, { CityResponse } from 'maxmind';
 import xml2js from 'xml2js';
+import { getAsBooleanFromENV } from './utils.js';
 
 export const ALLOW_GEOIP = true;
 
@@ -172,6 +173,11 @@ export function geoipAllowed(): void {
 
 export async function downloadMMDB(): Promise<void> {
     geoipAllowed();
+
+    if (getAsBooleanFromENV('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', false)) {
+        console.log("Skipping GeoIP database download due to PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD set!");
+        return;
+    }
 
     const assetUrl = await (new MaxMindDownloader(MMDB_REPO).getAsset());
 
