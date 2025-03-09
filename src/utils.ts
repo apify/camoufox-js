@@ -387,7 +387,7 @@ export interface LaunchOptions {
     /** Proxy to use for the browser.
      * Note: If `geoip` is `true`, a request will be sent through this proxy to find the target IP.
      */
-    proxy?: string;
+    proxy?: string | PlaywrightLaunchOptions['proxy'];
 
     /** Cache previous pages, requests, etc. (uses more memory). */
     enable_cache?: boolean;
@@ -568,7 +568,7 @@ export async function launchOptions({
 
         // Find the user's IP address
         if (proxy) {
-            geoip = await publicIP(proxy)
+            geoip = await publicIP(typeof proxy === 'string' ? proxy : proxy.server)
         } else {
             geoip = await publicIP()
         }
@@ -591,7 +591,7 @@ export async function launchOptions({
     // This is a very bad idea; the warning cannot be ignored with i_know_what_im_doing.
     if (
         proxy &&
-        !proxy.includes('localhost') &&
+        !(typeof proxy === 'string' ? proxy : proxy.server).includes('localhost') &&
         !isDomainSet(config, 'geolocation:')
     ) {
         LeakWarning.warn('proxy_without_geoip');
@@ -692,11 +692,15 @@ export async function launchOptions({
 
     let pwProxy: any = undefined;
     if (proxy) {
-        let proxyUrl = new URL(proxy);
-        pwProxy = {
-            server: proxyUrl.origin,
-            username: proxyUrl.username,
-            password: proxyUrl.password,
+        if (typeof proxy === 'string') {
+            let proxyUrl = new URL(proxy);
+            pwProxy = {
+                server: proxyUrl.origin,
+                username: proxyUrl.username,
+                password: proxyUrl.password,
+            }
+        } else {
+            pwProxy = proxy;
         }
     }
 
