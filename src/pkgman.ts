@@ -37,7 +37,7 @@ if (!(process.platform in OS_MAP)) {
 
 export const OS_NAME: 'mac' | 'win' | 'lin' = OS_MAP[process.platform];
 
-export const INSTALL_DIR: PathLike = path.join(os.homedir(), '.cache', 'camoufox');
+export const INSTALL_DIR: PathLike = userCacheDir('camoufox');
 export const LOCAL_DATA: PathLike = path.join(import.meta.dirname, 'data-files');
 
 export const OS_ARCH_MATRIX: { [key: string]: string[] } = {
@@ -275,6 +275,15 @@ export class CamoufoxFetcher extends GitHubDownloader {
     }
 }
 
+function userCacheDir(appName: string): string {
+    if (OS_NAME === 'win') {
+        return path.join(os.homedir(), 'AppData', 'Local', appName, appName, 'Cache');
+    } else if (OS_NAME === 'mac') {
+        return path.join(os.homedir(), 'Library', 'Caches', appName);
+    } else {
+        return path.join(os.homedir(), '.cache', appName);
+    }
+}
 
 export function installedVerStr(): string {
     return Version.fromPath().fullString;
