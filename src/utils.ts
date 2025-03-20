@@ -562,13 +562,45 @@ export async function launchOptions({
     // Set a fixed font spacing seed
     setInto(config, 'fonts:spacing_seed', Math.floor(Math.random() * 1_073_741_824));
 
+    // Handle proxy
+    let pwProxy: PlaywrightLaunchOptions['proxy'] | undefined = undefined;
+    let proxyString: string | undefined = undefined;
+    if (proxy) {
+        if (typeof proxy === 'string') {
+            proxyString = proxy;
+            let proxyUrl = new URL(proxy);
+            pwProxy = {
+                server: proxyUrl.origin,
+                username: proxyUrl.username,
+                password: proxyUrl.password,
+            }
+        } else {
+            pwProxy = proxy;
+            // Copy from playwright
+            let url;
+            try {
+                // new URL('127.0.0.1:8080') throws
+                // new URL('localhost:8080') fails to parse host or protocol
+                // In both of these cases, we need to try re-parse URL with `http://` prefix.
+                url = new URL(proxy.server);
+                if (!url.host || !url.protocol)
+                    url = new URL('http://' + proxy.server);
+            } catch (e) {
+                url = new URL('http://' + proxy.server);
+            }
+            url.username = proxy.username;
+            url.password = proxy.password;
+            proxyString = url.toString();
+        }
+    }
+
     // Set geolocation
     if (geoip){
         geoipAllowed()
 
         // Find the user's IP address
-        if (proxy) {
-            geoip = await publicIP(typeof proxy === 'string' ? proxy : proxy.server)
+        if (proxyString) {
+            geoip = await publicIP(proxyString)
         } else {
             geoip = await publicIP()
         }
@@ -590,8 +622,8 @@ export async function launchOptions({
     // Raise a warning when a proxy is being used without spoofing geolocation.
     // This is a very bad idea; the warning cannot be ignored with i_know_what_im_doing.
     if (
-        proxy &&
-        !(typeof proxy === 'string' ? proxy : proxy.server).includes('localhost') &&
+        proxyString &&
+        !proxyString.includes('localhost') &&
         !isDomainSet(config, 'geolocation:')
     ) {
         LeakWarning.warn('proxy_without_geoip');
@@ -688,20 +720,6 @@ export async function launchOptions({
         executable_path = executable_path.toString();
     } else {
         executable_path = launchPath();
-    }
-
-    let pwProxy: any = undefined;
-    if (proxy) {
-        if (typeof proxy === 'string') {
-            let proxyUrl = new URL(proxy);
-            pwProxy = {
-                server: proxyUrl.origin,
-                username: proxyUrl.username,
-                password: proxyUrl.password,
-            }
-        } else {
-            pwProxy = proxy;
-        }
     }
 
     const out: PlaywrightLaunchOptions = {
