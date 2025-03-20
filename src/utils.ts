@@ -576,8 +576,8 @@ export async function launchOptions({
             }
         } else {
             pwProxy = proxy;
-            // Copy from playwright
-            let url;
+            // Copy from playwright https://github.com/microsoft/playwright/blob/3873b72ac1441ca691f7594f0ed705bd84518f93/packages/playwright-core/src/server/browserContext.ts#L737-L747
+            let url: URL;
             try {
                 // new URL('127.0.0.1:8080') throws
                 // new URL('localhost:8080') fails to parse host or protocol
