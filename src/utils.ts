@@ -421,7 +421,7 @@ function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL {
         return new URL(proxy);
     }
 
-    const { server } = proxy;
+    const { server, username, password } = proxy;
     let url;
     try {
       // new URL('127.0.0.1:8080') throws
@@ -433,6 +433,9 @@ function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL {
     } catch (e) {
       url = new URL('http://' + server);
     }
+
+    if (username) url.username = username;
+    if (password) url.password = password;
 
     return url;
 }
@@ -723,6 +726,7 @@ export async function launchOptions({
             server: proxyUrl.origin,
             username: proxyUrl.username,
             password: proxyUrl.password,
+            bypass: typeof proxy === 'string' ? undefined : proxy.bypass, 
         } : undefined,
         "headless": headless,
         ...launch_options,
