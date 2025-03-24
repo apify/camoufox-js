@@ -391,6 +391,8 @@ __metadata:
     sqlite3: "npm:^5.1.7"
     ua-parser-js: "npm:^2.0.2"
     xml2js: "npm:^0.6.2"
+  bin:
+    camoufox-js: dist/__main__.js
   languageName: unknown
   linkType: soft
 
