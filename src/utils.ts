@@ -411,6 +411,31 @@ export interface LaunchOptions {
     [key: string]: any;
 }
 
+/**
+ * Convert a Playwright proxy string to a URL object.
+ * 
+ * Implementation from https://github.com/microsoft/playwright/blob/3873b72ac1441ca691f7594f0ed705bd84518f93/packages/playwright-core/src/server/browserContext.ts#L737-L747
+ */
+function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL {
+    if (typeof proxy === 'string') {
+        return new URL(proxy);
+    }
+
+    const { server } = proxy;
+    let url;
+    try {
+      // new URL('127.0.0.1:8080') throws
+      // new URL('localhost:8080') fails to parse host or protocol
+      // In both of these cases, we need to try re-parse URL with `http://` prefix.
+      url = new URL(server);
+      if (!url.host || !url.protocol)
+        url = new URL('http://' + server);
+    } catch (e) {
+      url = new URL('http://' + server);
+    }
+
+    return url;
+}
 
 export async function launchOptions({
     config,
@@ -563,47 +588,14 @@ export async function launchOptions({
     setInto(config, 'fonts:spacing_seed', Math.floor(Math.random() * 1_073_741_824));
 
     // Handle proxy
-    let pwProxy: PlaywrightLaunchOptions['proxy'] | undefined = undefined;
-    let proxyString: string | undefined = undefined;
-    if (proxy) {
-        if (typeof proxy === 'string') {
-            proxyString = proxy;
-            let proxyUrl = new URL(proxy);
-            pwProxy = {
-                server: proxyUrl.origin,
-                username: proxyUrl.username,
-                password: proxyUrl.password,
-            }
-        } else {
-            pwProxy = proxy;
-            // Copy from playwright https://github.com/microsoft/playwright/blob/3873b72ac1441ca691f7594f0ed705bd84518f93/packages/playwright-core/src/server/browserContext.ts#L737-L747
-            let url: URL;
-            try {
-                // new URL('127.0.0.1:8080') throws
-                // new URL('localhost:8080') fails to parse host or protocol
-                // In both of these cases, we need to try re-parse URL with `http://` prefix.
-                url = new URL(proxy.server);
-                if (!url.host || !url.protocol)
-                    url = new URL('http://' + proxy.server);
-            } catch (e) {
-                url = new URL('http://' + proxy.server);
-            }
-            url.username = proxy.username;
-            url.password = proxy.password;
-            proxyString = url.toString();
-        }
-    }
+    const proxyUrl = proxy ? getProxyUrl(proxy) : undefined;
 
     // Set geolocation
     if (geoip){
         geoipAllowed()
 
         // Find the user's IP address
-        if (proxyString) {
-            geoip = await publicIP(proxyString)
-        } else {
-            geoip = await publicIP()
-        }
+        geoip = await publicIP(proxyUrl?.href)
 
         // Spoof WebRTC if not blocked
         if (!block_webrtc) {
@@ -622,8 +614,8 @@ export async function launchOptions({
     // Raise a warning when a proxy is being used without spoofing geolocation.
     // This is a very bad idea; the warning cannot be ignored with i_know_what_im_doing.
     if (
-        proxyString &&
-        !proxyString.includes('localhost') &&
+        proxyUrl &&
+        !proxyUrl.hostname.includes('localhost') &&
         !isDomainSet(config, 'geolocation:')
     ) {
         LeakWarning.warn('proxy_without_geoip');
@@ -727,7 +719,11 @@ export async function launchOptions({
         "args": args,
         "env": env_vars as any,
         "firefoxUserPrefs": firefox_user_prefs,
-        "proxy": pwProxy,
+        "proxy": proxyUrl ? {
+            server: proxyUrl.origin,
+            username: proxyUrl.username,
+            password: proxyUrl.password,
+        } : undefined,
         "headless": headless,
         ...launch_options,
     };
