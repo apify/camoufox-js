@@ -209,9 +209,6 @@ function validateOS(os?: typeof SUPPORTED_OS[number] | (typeof SUPPORTED_OS[numb
         return [...os];
     }
 
-    if (os !== os.toLowerCase()) {
-        throw new InvalidOS(`OS values must be lowercase: '${os}'`);
-    }
     if (!SUPPORTED_OS.includes(os)) {
         throw new InvalidOS(`Camoufox does not support the OS: '${os}'`);
     }
@@ -522,7 +519,7 @@ export async function launchOptions({
     const operatingSystems = validateOS(os);
 
     // webgl_config requires OS to be set
-    if (!os && webgl_config) {
+    if (!operatingSystems && webgl_config) {
         throw new Error('OS must be set when using webgl_config');
     }
 
