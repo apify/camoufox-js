@@ -2,10 +2,12 @@ import { join } from 'node:path';
 import { loadYaml } from './pkgman.js';
 import { Fingerprint, FingerprintGenerator, FingerprintGeneratorOptions, ScreenFingerprint } from 'fingerprint-generator';
 
+export const SUPPORTED_OS = ['linux', 'macos', 'windows'] as const;
+
 const BROWSERFORGE_DATA = loadYaml(join(import.meta.dirname, 'data-files', 'browserforge.yml'));
 const FP_GENERATOR = new FingerprintGenerator({
     browsers: ['firefox'],
-    operatingSystems: ['linux', 'macos', 'windows'],
+    operatingSystems: SUPPORTED_OS as any,
 });
 
 function randrange(min: number, max: number): number {
@@ -84,7 +86,7 @@ function handleWindowSize(fp: Fingerprint, outerWidth: number, outerHeight: numb
     fp.screen = sc;
 }
 
-export function generateFingerprint(window?: [number, number], config: FingerprintGeneratorOptions | {} = {}): Fingerprint {
+export function generateFingerprint(window?: [number, number], config?: Partial<FingerprintGeneratorOptions>): Fingerprint {
     if (window) {
         const { fingerprint } = FP_GENERATOR.getFingerprint(config);
         handleWindowSize(fingerprint, window[0], window[1]);

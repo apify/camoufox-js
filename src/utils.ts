@@ -5,7 +5,7 @@
 import path from 'path';
 import { DefaultAddons, addDefaultAddons, confirmPaths } from './addons.js';
 import { InvalidOS, InvalidPropertyType, NonFirefoxFingerprint, UnknownProperty } from './exceptions.js';
-import { fromBrowserforge, generateFingerprint } from './fingerprints.js';
+import { fromBrowserforge, generateFingerprint, SUPPORTED_OS } from './fingerprints.js';
 import { publicIP, validIPv4, validIPv6 } from './ip.js';
 import { geoipAllowed, getGeolocation, handleLocales } from './locale.js';
 import { OS_NAME, getPath, installedVerStr, launchPath } from './pkgman.js';
@@ -201,17 +201,22 @@ function checkCustomFingerprint(fingerprint: Fingerprint): void {
     LeakWarning.warn('custom_fingerprint', false);
 }
 
-function checkValidOS(os: string | string[]): void {
+function validateOS(os?: typeof SUPPORTED_OS[number] | (typeof SUPPORTED_OS[number])[]): (typeof SUPPORTED_OS[number])[] | undefined {
+    if (!os) return undefined;
+
     if (Array.isArray(os)) {
-        os.forEach(checkValidOS);
-        return;
+        os.every(validateOS);
+        return [...os];
     }
-    if (!os.toLowerCase()) {
+
+    if (os !== os.toLowerCase()) {
         throw new InvalidOS(`OS values must be lowercase: '${os}'`);
     }
-    if (!['windows', 'macos', 'linux'].includes(os)) {
+    if (!SUPPORTED_OS.includes(os)) {
         throw new InvalidOS(`Camoufox does not support the OS: '${os}'`);
     }
+
+    return [os];
 }
 
 function cleanLocals(data: Record<string, any>): Record<string, any> {
@@ -310,7 +315,7 @@ export interface LaunchOptions {
      * Can be "windows", "macos", "linux", or a list to randomly choose from.
      * Default: ["windows", "macos", "linux"]
      */
-    os?: string | string[];
+    os?: typeof SUPPORTED_OS[number] | (typeof SUPPORTED_OS[number])[];
 
     /** Whether to block all images. */
     block_images?: boolean;
@@ -514,13 +519,10 @@ export async function launchOptions({
         warnManualConfig(config);
     }
 
-    // Assert the target OS is valid
-    if (os) {
-        checkValidOS(os);
-    }
+    const operatingSystems = validateOS(os);
 
     // webgl_config requires OS to be set
-    else if (webgl_config) {
+    if (!os && webgl_config) {
         throw new Error('OS must be set when using webgl_config');
     }
 
@@ -548,7 +550,7 @@ export async function launchOptions({
             window,
             {
                 screen: screen || getScreenCons(headless || 'DISPLAY' in env),
-                os,
+                operatingSystems,
             }
         );
     } else {
