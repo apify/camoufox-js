@@ -162,23 +162,23 @@ function determineUAOS(userAgent: string): 'mac' | 'win' | 'lin' {
     return 'lin';
 }
 
-function getScreenCons(headless?: boolean): Screen | null {
+function getScreenCons(headless?: boolean): Screen | undefined {
     if (headless === false) {
-        return null;
+        return undefined;
     }
     // TODO - Implement getMonitors
     // try {
     //     const monitors = getMonitors();
     //     if (!monitors.length) {
-    //         return null;
+    //         return undefined;
     //     }
     //     const monitor = monitors.reduce((prev, curr) => (prev.width * prev.height > curr.width * curr.height ? prev : curr));
     //     return { maxWidth: monitor.width, maxHeight: monitor.height };
     // } catch {
-    //     return null;
+    //     return undefined;
     // }
 
-    return null;
+    return undefined;
 }
 
 function updateFonts(config: Record<string, any>, targetOS: string): void {
@@ -418,7 +418,9 @@ export interface LaunchOptions {
  * 
  * Implementation from https://github.com/microsoft/playwright/blob/3873b72ac1441ca691f7594f0ed705bd84518f93/packages/playwright-core/src/server/browserContext.ts#L737-L747
  */
-function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL {
+function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL | null {
+    if (!proxy) return null;
+
     if (typeof proxy === 'string') {
         return new URL(proxy);
     }
@@ -590,7 +592,7 @@ export async function launchOptions({
     setInto(config, 'fonts:spacing_seed', Math.floor(Math.random() * 1_073_741_824));
 
     // Handle proxy
-    const proxyUrl = proxy ? getProxyUrl(proxy) : undefined;
+    const proxyUrl = getProxyUrl(proxy);
 
     // Set geolocation
     if (geoip){
@@ -662,11 +664,11 @@ export async function launchOptions({
         // If the user has provided a specific WebGL vendor/renderer pair, use it
         let webgl_fp;
         if (webgl_config) {
-            webgl_fp = sampleWebGL(targetOS, ...webgl_config);
+            webgl_fp = await sampleWebGL(targetOS, ...webgl_config);
         } else {
-            webgl_fp = sampleWebGL(targetOS);
+            webgl_fp = await sampleWebGL(targetOS);
         }
-        const enable_webgl2 = webgl_fp.webGl2Enabled ?? false;
+        const enable_webgl2 = (webgl_fp as any).webGl2Enabled ?? false;
 
         // Merge the WebGL fingerprint into the config
         mergeInto(config, webgl_fp);
@@ -725,7 +727,7 @@ export async function launchOptions({
             server: proxyUrl.origin,
             username: proxyUrl.username,
             password: proxyUrl.password,
-            bypass: typeof proxy === 'string' ? undefined : proxy.bypass, 
+            bypass: typeof proxy === 'string' ? undefined : proxy?.bypass, 
         } : undefined,
         "headless": headless,
         ...launch_options,

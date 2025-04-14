@@ -208,7 +208,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
     }
 
     async extractZip(zipFile: Buffer): Promise<void> {
-        const zip = AdmZip(zipFile);
+        const zip = new AdmZip(zipFile);
         zip.extractAllTo(INSTALL_DIR.toString(), true);
     }
 
@@ -369,7 +369,7 @@ export async function unzip(
     desc?: string,
     bar: boolean = true
 ): Promise<void> {
-    const zip = AdmZip(zipFile);
+    const zip = new AdmZip(zipFile);
     const zipEntries = zip.getEntries();
 
     if (bar) {
