@@ -1,0 +1,36 @@
+name: Build & test
+
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+
+jobs:
+    run_ts_build:
+        name: Run TypeScript build & Test
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+        
+            - name: Enable corepack
+              run: corepack enable
+
+            - name: Install dependencies
+              run: yarn
+
+            - name: Run TypeScript build
+              run: yarn build
+
+            - name: Install Camoufox
+              run: npx camoufox fetch
+
+            - name: Run tests
+              run: yarn test
+

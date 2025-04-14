@@ -5,7 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc && npm run copy-files",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "copy-files": "cp -r src/data-files dist/data-files"
   },
   "bin": "dist/__main__.js",
@@ -34,6 +34,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.2",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
   }
 }
