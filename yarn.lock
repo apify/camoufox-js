@@ -420,10 +420,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/adm-zip@npm:^0.5.7":
+  version: 0.5.7
+  resolution: "@types/adm-zip@npm:0.5.7"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/6ba62bd8f4a6e7ffdad08d951c65c4f69161c2b96cc34249dcf3c448dca85749409407b297472d5c66b711325de89012e8607b74c87d99ec23e9b7a44b6c71c6
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:1.0.7, @types/estree@npm:^1.0.0":
   version: 1.0.7
   resolution: "@types/estree@npm:1.0.7"
   checksum: 10c0/be815254316882f7c40847336cd484c3bc1c3e34f710d197160d455dc9d6d050ffbf4c3bc76585dba86f737f020ab20bdb137ebe0e9116b0c86c7c0342221b8c
+  languageName: node
+  linkType: hard
+
+"@types/js-yaml@npm:^4.0.9":
+  version: 4.0.9
+  resolution: "@types/js-yaml@npm:4.0.9"
+  checksum: 10c0/24de857aa8d61526bbfbbaa383aa538283ad17363fcd5bb5148e2c7f604547db36646440e739d78241ed008702a8920665d1add5618687b6743858fae00da211
+  languageName: node
+  linkType: hard
+
+"@types/language-tags@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@types/language-tags@npm:1.0.4"
+  checksum: 10c0/09d50165c9718243759af717e4bf04f97a9df6d0bdfe51cd7543e68c91cb9a5b4be7322d2218398716b6e7b09a4fde9529ab0d6d12e41ca0aba23e8d580ad097
   languageName: node
   linkType: hard
 
@@ -452,6 +475,24 @@ __metadata:
   dependencies:
     undici-types: "npm:~6.20.0"
   checksum: 10c0/2173828b8c93c22761bf4b3319a4641bde6d54855c7dbf63db15594f335aa546c75222c2f36d847d7791557ef37595a10ecf52d37ea5b8f8b8b3a7316412ae08
+  languageName: node
+  linkType: hard
+
+"@types/progress@npm:^2.0.7":
+  version: 2.0.7
+  resolution: "@types/progress@npm:2.0.7"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/1e387b59a3a19562e49b9ac43db8fb78d2d3ad9168fa54585a9455f9bb530e43a6a69c30dfb44a6fdd10e4bc7a2fb431d71d514f1bc191c2e1c76d3e0314df74
+  languageName: node
+  linkType: hard
+
+"@types/xml2js@npm:^0.4.14":
+  version: 0.4.14
+  resolution: "@types/xml2js@npm:0.4.14"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/06776e7f7aec55a698795e60425417caa7d7db3ff680a7b4ccaae1567c5fec28ff49b9975e9a0d74ff4acb8f4a43730501bbe64f9f761d784c6476ba4db12e13
   languageName: node
   linkType: hard
 
@@ -801,7 +842,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "camoufox-js@workspace:."
   dependencies:
+    "@types/adm-zip": "npm:^0.5.7"
+    "@types/js-yaml": "npm:^4.0.9"
+    "@types/language-tags": "npm:^1.0.4"
     "@types/node": "npm:^22.13.2"
+    "@types/progress": "npm:^2.0.7"
+    "@types/xml2js": "npm:^0.4.14"
     adm-zip: "npm:^0.5.16"
     commander: "npm:^13.1.0"
     fingerprint-generator: "npm:^2.1.62"

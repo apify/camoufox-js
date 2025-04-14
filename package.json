@@ -33,7 +33,12 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/js-yaml": "^4.0.9",
+    "@types/language-tags": "^1.0.4",
     "@types/node": "^22.13.2",
+    "@types/progress": "^2.0.7",
+    "@types/xml2js": "^0.4.14",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"

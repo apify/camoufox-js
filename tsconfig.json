@@ -7,6 +7,7 @@
       "removeComments": false,
       "outDir": "./dist",
       "declaration": true,
+      "strict": true,
     },
     "include": [
       "src/**/*.ts"
