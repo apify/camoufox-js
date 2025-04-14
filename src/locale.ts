@@ -85,12 +85,10 @@ export function normalizeLocale(locale: string): Locale {
         throw InvalidLocale.invalidInput(locale);
     }
 
-    const record = parser.language()?.data['record'];
-
     return new Locale(
-        record['Subtag'],
-        parser.region()?.data['record']['Subtag'],
-        record['Suppress-Script']
+        parser.language()?.format() ?? 'en',
+        parser.region()?.format(),
+        parser.language()?.script()?.format()
     );
 }
 

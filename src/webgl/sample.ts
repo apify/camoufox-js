@@ -9,10 +9,13 @@ const DB_PATH = path.join(import.meta.dirname, '..' , 'data-files', 'webgl_data.
 interface WebGLData {
     vendor: string;
     renderer: string;
-    data: any;
+    data: string;
+    win: number;
+    mac: number;
+    lin: number;
 }
 
-export async function sampleWebGL(os: string, vendor?: string, renderer?: string): Promise<WebGLData> {
+export async function sampleWebGL(os: 'win' | 'mac' | 'lin', vendor?: string, renderer?: string): Promise<WebGLData> {
     if (!OS_ARCH_MATRIX[os]) {
         throw new Error(`Invalid OS: ${os}. Must be one of: win, mac, lin`);
     }
@@ -29,7 +32,7 @@ export async function sampleWebGL(os: string, vendor?: string, renderer?: string
     }
 
     return new Promise<WebGLData>((resolve, reject) => {
-        db.all(query, params, (err, rows: { data: any }[]) => {
+        db.all(query, params, (err, rows: WebGLData[]) => {
             if (err) {
                 reject(err);
                 return;
@@ -41,8 +44,8 @@ export async function sampleWebGL(os: string, vendor?: string, renderer?: string
             }
 
             if (vendor && renderer) {
-                const result = rows[0] as { data: any };
-                if (result![3] <= 0) {
+                const result = rows[0]!;
+                if (result[os]! <= 0) {
                     db.all(`SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os} > 0`, [], (err, pairs: { vendor: string, renderer: string }[]) => {
                         if (err) {
                             reject(err);
