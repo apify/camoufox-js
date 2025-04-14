@@ -668,15 +668,15 @@ export async function launchOptions({
         } else {
             webgl_fp = await sampleWebGL(targetOS);
         }
-        const enable_webgl2 = (webgl_fp as any).webGl2Enabled ?? false;
+        const { webGl2Enabled, ...webGlConfig } = webgl_fp;
 
         // Merge the WebGL fingerprint into the config
-        mergeInto(config, webgl_fp);
+        mergeInto(config, webGlConfig);
         // Set the WebGL preferences
         mergeInto(
             firefox_user_prefs,
             {
-                'webgl.enable-webgl2': enable_webgl2,
+                'webgl.enable-webgl2': webGl2Enabled,
                 'webgl.force-enabled': true,
             },
         );
