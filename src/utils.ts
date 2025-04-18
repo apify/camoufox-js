@@ -17,7 +17,7 @@ import { join } from 'path';
 import { UAParser } from 'ua-parser-js';
 import { Fingerprint, FingerprintGeneratorOptions } from 'fingerprint-generator';
 
-import { LaunchOptions as PlaywrightLaunchOptions } from 'playwright';
+import { LaunchOptions as PlaywrightLaunchOptions } from 'playwright-core';
 
 type Screen = FingerprintGeneratorOptions['screen'];
 

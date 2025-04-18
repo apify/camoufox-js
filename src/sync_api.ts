@@ -3,7 +3,7 @@ import {
     BrowserContext,
     BrowserType,
     firefox
-} from 'playwright';
+} from 'playwright-core';
 
 import { LaunchOptions, launchOptions, syncAttachVD } from './utils.js';
 import { VirtualDisplay } from './virtdisplay.js';
