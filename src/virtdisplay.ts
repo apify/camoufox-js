@@ -7,7 +7,6 @@ import {
 import { OS_NAME } from './pkgman.js';
 import { execFileSync, spawn, ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
 // import { globSync } from 'glob';
 import { randomInt } from 'crypto';

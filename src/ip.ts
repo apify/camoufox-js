@@ -1,6 +1,4 @@
 import { Impit } from 'impit';
-import * as https from 'https';
-import { URL } from 'url';
 
 export class InvalidIP extends Error {}
 export class InvalidProxy extends Error {}

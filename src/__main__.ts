@@ -6,7 +6,7 @@ import { INSTALL_DIR, CamoufoxFetcher, installedVerStr } from './pkgman.js';
 import { Command } from 'commander';
 
 import { Camoufox } from './sync_api.js';
-import { existsSync, fstat, rmSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { getAsBooleanFromENV } from './utils.js';
 
 class CamoufoxUpdate extends CamoufoxFetcher {

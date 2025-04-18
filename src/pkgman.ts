@@ -2,7 +2,6 @@ import { CONSTRAINTS } from './__version__.js';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as https from 'https';
 import { execSync } from 'child_process';
 import { PathLike } from 'fs';
 import {
