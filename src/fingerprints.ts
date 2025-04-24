@@ -73,8 +73,8 @@ export function fromBrowserforge(fingerprint: Fingerprint, ffVersion?: string): 
 
 function handleWindowSize(fp: Fingerprint, outerWidth: number, outerHeight: number): void {
     const sc: ExtendedScreen = { ...fp.screen, screenY: undefined };
-    sc.screenX += (sc.width - outerWidth) / 2;
-    sc.screenY = (sc.height - outerHeight) / 2;
+    sc.screenX += Math.floor((sc.width - outerWidth) / 2);
+    sc.screenY = Math.floor((sc.height - outerHeight) / 2);
     if (sc.innerWidth) {
         sc.innerWidth = Math.max(outerWidth - sc.outerWidth + sc.innerWidth, 0);
     }
