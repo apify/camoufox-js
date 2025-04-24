@@ -5,9 +5,10 @@ on:
     push:
         branches:
             - main
+    workflow_call:
 
 jobs:
-    run_ts_build:
+    run_ts_build_and_test:
         name: Run TypeScript build & Test
         runs-on: ubuntu-latest
         steps:

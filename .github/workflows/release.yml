@@ -1,0 +1,89 @@
+name: Release to npm
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: The version to bump (if you choose custom, please include it under custom version)
+                required: true
+                default: 'patch'
+                type: choice
+                options:
+                    - 'patch'
+                    - 'minor'
+                    - 'major'
+                    - 'custom'
+            custom_version:
+                description: The custom version to bump to (only for "custom" type)
+                required: false
+                type: string
+                default: ''
+
+jobs:
+    build_and_test:
+        name: Build and test
+        uses: ./.github/workflows/test.yml
+        secrets: inherit
+
+    release:
+        name: Release
+        needs: [build_and_test]
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+                with:
+                    token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                    fetch-depth: 0
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+              
+            - name: Enable corepack
+              run: corepack enable
+      
+            - name: Install dependencies
+              run: yarn
+      
+            - name: Run TypeScript build
+              run: yarn build
+
+            - name: Setup git user and npm
+              run: |
+                 git config --global user.name "Apify Release Bot"
+                 git config --global user.email "noreply@apify.com"
+                 echo "access=public" > .npmrc
+                 echo "//registry.npmjs.org/:_authToken=${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}" >> .npmrc
+
+            -   name: Bump version to custom version
+                if: ${{ github.event.inputs.version == 'custom' && github.event.inputs.custom_version != '' }}
+                run: npm version --no-git-tag ${{ github.event.inputs.custom_version }}
+                env:
+                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                    GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
+                    GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            -   name: Bump version to ${{ github.event.inputs.version }} version
+                if: ${{ github.event.inputs.version != 'custom' }}
+                run: npm version --no-git-tag ${{ github.event.inputs.version }}
+                env:
+                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                    GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
+                    GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            -   name: Pin versions in internal dependencies and update lockfile
+                run: |
+                    yarn install --no-immutable
+                    git add .
+                    git diff-index --quiet HEAD || git commit -m 'chore(release): update internal dependencies [skip ci]'
+                    git push
+
+            -   name: Publish packages
+                run: npm publish --yes --no-verify-access
+                env:
+                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                    GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
+                    GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
