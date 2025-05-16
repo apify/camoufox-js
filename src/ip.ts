@@ -94,7 +94,7 @@ export async function publicIP(proxy?: string): Promise<string> {
             validateIP(ip);
             return ip;
         } catch (error) {
-            console.warn(new InvalidProxy(`Failed to connect to proxy: ${proxy}`));
+            console.warn(new InvalidProxy(`Failed to connect to proxy: ${proxy}`, { cause: error }));
         }
     }
     throw new InvalidIP("Failed to get IP address");
