@@ -78,6 +78,8 @@ export async function publicIP(proxy?: string): Promise<string> {
         "https://ipecho.net/plain",
     ];
 
+    const errors = [];
+
     for (const url of URLS) {
         try {
             const impit = new Impit({
@@ -94,8 +96,12 @@ export async function publicIP(proxy?: string): Promise<string> {
             validateIP(ip);
             return ip;
         } catch (error) {
-            console.warn(new InvalidProxy(`Failed to connect to proxy: ${proxy}`, { cause: error }));
+            errors.push(error);
+            if ( process.env.CAMOUFOX_DEBUG ) {
+                console.warn(new InvalidProxy(`camoufox-js(warn): Failed to fetch public proxy IP from ${url}, retrying with another URL...`, { cause: error }));
+            }
         }
     }
-    throw new InvalidIP("Failed to get IP address");
+
+    throw new InvalidIP("Failed to get a public proxy IP address from any API endpoint.", { cause: errors });
 }
