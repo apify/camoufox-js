@@ -271,7 +271,7 @@ async function asyncAttachVD(browser: any, virtualDisplay?: VirtualDisplay): Pro
     const originalClose = browser.close;
 
     browser.close = async (...args: any[]) => {
-        await originalClose(...args);
+        await originalClose.apply(browser, ...args);
         if (virtualDisplay) {
             virtualDisplay.kill();
         }
@@ -284,7 +284,6 @@ async function asyncAttachVD(browser: any, virtualDisplay?: VirtualDisplay): Pro
 
 
 export function syncAttachVD(browser: any, virtualDisplay?: VirtualDisplay | null): any {
-    return browser;
     /**
      * Attaches the virtual display to the sync browser cleanup
      */
@@ -295,7 +294,7 @@ export function syncAttachVD(browser: any, virtualDisplay?: VirtualDisplay | nul
     const originalClose = browser.close;
 
     browser.close = (...args: any[]) => {
-        originalClose(...args);
+        originalClose.apply(browser, ...args);
         if (virtualDisplay) {
             virtualDisplay.kill();
         }
@@ -373,7 +372,7 @@ export interface LaunchOptions {
     /** Whether to run the browser in headless mode. Defaults to `false`.
      * Note: On Linux, passing `headless='virtual'` will use Xvfb.
      */
-    headless?: boolean;
+    headless?: boolean | 'virtual';
 
     /** Whether to enable running scripts in the main world.
      * To use this, prepend "mw:" to the script: `page.evaluate("mw:" + script)`.
@@ -548,7 +547,7 @@ export async function launchOptions({
         fingerprint = generateFingerprint(
             window,
             {
-                screen: screen || getScreenCons(headless || 'DISPLAY' in env),
+                screen: screen || getScreenCons(headless === true || 'DISPLAY' in env),
                 operatingSystems,
             }
         );
@@ -729,7 +728,7 @@ export async function launchOptions({
             password: proxyUrl.password,
             bypass: typeof proxy === 'string' ? undefined : proxy?.bypass, 
         } : undefined,
-        "headless": headless,
+        "headless": headless === true,
         ...launch_options,
     };
 
