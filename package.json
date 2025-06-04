@@ -22,7 +22,7 @@
     "adm-zip": "^0.5.16",
     "commander": "^13.1.0",
     "fingerprint-generator": "^2.1.66",
-    "impit": "^0.4.6",
+    "impit": "^0.5.0",
     "js-yaml": "^4.1.0",
     "language-tags": "^2.0.1",
     "maxmind": "^4.3.24",
