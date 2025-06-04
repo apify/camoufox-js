@@ -19,17 +19,16 @@ import { Camoufox } from 'camoufox-js';
 
 const browser = await Camoufox({
     // custom camoufox options
-} as any);
+});
             
 const page = await browser.newPage(); // `page` is a Playwright Page instance
 ```
 
 Alternatively, if you want to use additional Playwright launch options, you can launch the Camoufox instance like this:
 
-
 ```javascript
 import { launchOptions } from 'camoufox-js';
-import { firefox } from 'playwright';
+import { firefox } from 'playwright-core';
 
 // you might need to run `npx camoufox-js fetch` to download the browser after installing the package
 
