@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { Camoufox } from '../src';
+import { Camoufox, launchServer } from '../src';
+import { firefox } from 'playwright-core';
 
 const TEST_CASES = [
     { os: 'linux', userAgentRegex: /Linux/i },
@@ -40,3 +41,17 @@ describe('Fingerprint consistency', () => {
         10e3
     );
 });
+
+test('Playwright connects to Camoufox server', async () => {
+    const server = await launchServer({});
+
+    const browser = await firefox.connect(server.wsEndpoint());
+    const page = await browser.newPage();
+    await page.goto('http://httpbin.org/user-agent');
+
+    const userAgent = await page.evaluate(() => navigator.userAgent.toString());
+    expect(userAgent).toMatch(/Firefox/);
+    await browser.close();
+
+    await server.close();
+}, 30e3);

@@ -8,6 +8,7 @@ import { Command } from 'commander';
 import { Camoufox } from './sync_api.js';
 import { existsSync, rmSync } from 'fs';
 import { getAsBooleanFromENV } from './utils.js';
+import { launchServer } from './server.js';
 
 class CamoufoxUpdate extends CamoufoxFetcher {
     currentVerStr: string | null;
@@ -107,11 +108,16 @@ program
         await page.pause();
     });
 
-// program
-//     .command('server')
-//     .action(() => {
-//         launchServer();
-//     });
+program
+    .command('server')
+    .action(async () => {
+        const server = await launchServer({});
+
+        console.log(`Camoufox server started at ${server.wsEndpoint()}`);
+        console.log();
+        console.log(`You can connect to it using Playwright's BrowserType.connect() method.`);
+        console.log(`To stop the server, press Ctrl+C or close this terminal.`);
+    });
 
 program
     .command('path')
