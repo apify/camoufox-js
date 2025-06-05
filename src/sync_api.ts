@@ -8,25 +8,27 @@ import {
 import { LaunchOptions, launchOptions, syncAttachVD } from './utils.js';
 import { VirtualDisplay } from './virtdisplay.js';
 
-export async function Camoufox(launch_options: LaunchOptions) {
-    return NewBrowser(firefox, {}, false, false, launch_options);
+export async function Camoufox(launch_options: LaunchOptions | { headless?: boolean | 'virtual' }) {
+    const { headless, ...launchOptions } = launch_options;
+    return NewBrowser(firefox, headless, {}, false, false, launchOptions);
 }
 
 export async function NewBrowser(
     playwright: BrowserType<Browser>,
+    headless: boolean | 'virtual' = false,
     fromOptions: Record<string, any> = {},
     persistentContext: boolean = false,
     debug: boolean = false,
     launch_options: LaunchOptions = {}
 ): Promise<Browser | BrowserContext> {
-    launch_options.headless ||= false;
-
     let virtualDisplay: VirtualDisplay | null = null;
 
-    if (launch_options.headless === 'virtual') {
+    if (headless === 'virtual') {
         virtualDisplay = new VirtualDisplay(debug);
         launch_options['virtual_display'] = virtualDisplay.get();
         launch_options.headless = false;
+    } else {
+        launch_options.headless ||= headless;
     }
 
     if (!fromOptions || Object.keys(fromOptions).length === 0) {

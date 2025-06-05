@@ -7,6 +7,22 @@ const TEST_CASES = [
     { os: 'macos', userAgentRegex: /Mac OS/i },
 ];
 
+describe('virtual display', () => {
+    test('should launch', async () => {
+        const browser = await Camoufox({
+            os: 'linux',
+            headless: 'virtual',
+        } as any);
+
+        const page = await browser.newPage();
+        await page.goto('http://httpbin.org/user-agent');
+        const userAgent = await page.evaluate(() => navigator.userAgent.toString());
+        expect(userAgent).toMatch(/Linux/i);
+        await browser.close();
+
+    }, 10e3); 
+});
+
 describe('Fingerprint consistency', () => {
     test.each(TEST_CASES)('User-Agent matches set OS ($os)', 
         async ({os, userAgentRegex}) => {

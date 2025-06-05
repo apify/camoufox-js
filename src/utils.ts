@@ -370,9 +370,8 @@ export interface LaunchOptions {
     ff_version?: number;
 
     /** Whether to run the browser in headless mode. Defaults to `false`.
-     * Note: On Linux, passing `headless='virtual'` will use Xvfb.
      */
-    headless?: boolean | 'virtual';
+    headless?: boolean;
 
     /** Whether to enable running scripts in the main world.
      * To use this, prepend "mw:" to the script: `page.evaluate("mw:" + script)`.
@@ -547,7 +546,7 @@ export async function launchOptions({
         fingerprint = generateFingerprint(
             window,
             {
-                screen: screen || getScreenCons(headless === true || 'DISPLAY' in env),
+                screen: screen || getScreenCons(headless || 'DISPLAY' in env),
                 operatingSystems,
             }
         );
@@ -728,7 +727,7 @@ export async function launchOptions({
             password: proxyUrl.password,
             bypass: typeof proxy === 'string' ? undefined : proxy?.bypass, 
         } : undefined,
-        "headless": headless === true,
+        "headless": headless,
         ...launch_options,
     };
 
