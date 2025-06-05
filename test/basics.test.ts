@@ -43,7 +43,9 @@ describe('Fingerprint consistency', () => {
 });
 
 test('Playwright connects to Camoufox server', async () => {
-    const server = await launchServer({});
+    const server = await launchServer({
+        headless: true,
+    });
 
     const browser = await firefox.connect(server.wsEndpoint());
     const page = await browser.newPage();
