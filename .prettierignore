@@ -1,0 +1,4 @@
+dist
+
+# Ignore all HTML files:
+**/*.json

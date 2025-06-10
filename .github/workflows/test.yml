@@ -1,37 +1,36 @@
 name: Build & test
 
 on:
-    pull_request:
-    push:
-        branches:
-            - main
-    workflow_call:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_call:
 
 jobs:
-    run_ts_build_and_test:
-        name: Run TypeScript build & Test
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  run_ts_build_and_test:
+    name: Run TypeScript build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '22'
-        
-            - name: Enable corepack
-              run: corepack enable
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-            - name: Install dependencies
-              run: yarn
+      - name: Enable corepack
+        run: corepack enable
 
-            - name: Run TypeScript build
-              run: yarn build
+      - name: Install dependencies
+        run: yarn
 
-            - name: Install Camoufox
-              run: npx camoufox fetch
+      - name: Run TypeScript build
+        run: yarn build
 
-            - name: Run tests
-              run: yarn test --retry=3
+      - name: Install Camoufox
+        run: npx camoufox fetch
 
+      - name: Run tests
+        run: yarn test --retry=3

@@ -63,6 +63,5 @@ battery:
   charging: battery:charging
   chargingTime: battery:chargingTime
   dischargingTime: battery:dischargingTime
-
 # Unsupported: videoCodecs, audioCodecs, pluginsData, multimediaDevices
 # Fonts are listed through the launcher.
