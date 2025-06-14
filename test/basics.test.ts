@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { Camoufox, launchServer } from '../src';
-import { firefox } from 'playwright-core';
+import { playwright, Camoufox, launchServer } from '../src';
 
 const TEST_CASES = [
     { os: 'linux', userAgentRegex: /Linux/i },
@@ -21,21 +20,21 @@ describe('virtual display', () => {
         expect(userAgent).toMatch(/Linux/i);
         await browser.close();
 
-    }, 10e3); 
+    }, 10e3);
 });
 
 describe('Fingerprint consistency', () => {
-    test.each(TEST_CASES)('User-Agent matches set OS ($os)', 
+    test.each(TEST_CASES)('User-Agent matches set OS ($os)',
         async ({os, userAgentRegex}) => {
             const browser = await Camoufox({
                 os,
                 headless: true,
             } as any);
-            
+
             const page = await browser.newPage();
 
             await page.goto('http://httpbin.org/user-agent');
-            
+
             const [httpAgent, jsAgent] = await page.evaluate(() => {
                 return [
                     JSON.parse(document.body.innerText)['user-agent'],
@@ -63,7 +62,7 @@ test('Playwright connects to Camoufox server', async () => {
         headless: true,
     });
 
-    const browser = await firefox.connect(server.wsEndpoint());
+    const browser = await playwright.firefox.connect(server.wsEndpoint());
     const page = await browser.newPage();
     await page.goto('http://httpbin.org/user-agent');
 
