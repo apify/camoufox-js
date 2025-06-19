@@ -4,4 +4,3 @@ scripts/
 *.mmdb
 dist/
 .npmrc
-user_data/
