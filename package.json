@@ -38,6 +38,7 @@
     "@types/node": "^22.13.2",
     "@types/progress": "^2.0.7",
     "@types/xml2js": "^0.4.14",
+    "playwright-core": "^1.53.1",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
