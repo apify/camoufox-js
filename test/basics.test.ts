@@ -73,3 +73,47 @@ test('Playwright connects to Camoufox server', async () => {
 
     await server.close();
 }, 30e3);
+
+test('Persistent context works', async () => {
+    {
+        const context = await Camoufox({
+            user_data_dir: './user_data',
+            headless: true,
+        });
+
+        const page = await context.newPage();
+        await page.goto('https://example.com');
+
+        await page.evaluate(() => {
+            document.cookie = 'name=value; path=/; domain=example.com; expires=Fri, 31 Dec 9999 23:59:59 GMT';
+        });
+        await page.close();
+        await context.close();
+    }
+
+    let readCookies: any = null;
+    
+    {
+        const context = await Camoufox({
+            user_data_dir: './user_data',
+            headless: true,
+        });
+
+        const page = await context.newPage();
+        await page.goto('https://example.com');
+
+        readCookies = await page.evaluate(() => {
+            const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+                const [name, value] = cookie.split('=');
+                acc[name] = value;
+                return acc;
+            }, {});
+            return cookies;
+        });
+        
+        await page.close();
+        await context.close();
+    }
+
+    expect(readCookies).toEqual({ name: 'value' });
+}, 30e3);
