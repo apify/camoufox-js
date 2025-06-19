@@ -8,19 +8,19 @@ import {
 import { LaunchOptions, launchOptions, syncAttachVD } from './utils.js';
 import { VirtualDisplay } from './virtdisplay.js';
 
-export async function Camoufox(launch_options: LaunchOptions | { headless?: boolean | 'virtual' }) {
-    const { headless, ...launchOptions } = launch_options;
-    return NewBrowser(firefox, headless, {}, false, false, launchOptions);
+export async function Camoufox<UserDataDir extends string | undefined = undefined, ReturnType = UserDataDir extends string ? BrowserContext : Browser>(launch_options: LaunchOptions | { headless?: boolean | 'virtual', user_data_dir: UserDataDir } = {}): Promise<ReturnType> {
+    const { headless, user_data_dir, ...launchOptions } = launch_options;
+    return NewBrowser(firefox, headless, {}, user_data_dir ?? false, false, launchOptions);
 }
 
-export async function NewBrowser(
+export async function NewBrowser<UserDataDir extends string | false = false, ReturnType = UserDataDir extends string ? BrowserContext : Browser>(
     playwright: BrowserType<Browser>,
     headless: boolean | 'virtual' = false,
     fromOptions: Record<string, any> = {},
-    persistentContext: boolean = false,
+    userDataDir: UserDataDir = false as UserDataDir,
     debug: boolean = false,
     launch_options: LaunchOptions = {}
-): Promise<Browser | BrowserContext> {
+): Promise<ReturnType> {
     let virtualDisplay: VirtualDisplay | null = null;
 
     if (headless === 'virtual') {
@@ -35,8 +35,8 @@ export async function NewBrowser(
         fromOptions = await launchOptions({ debug, ...launch_options });
     }
 
-    if (persistentContext) {
-        const context = await playwright.launchPersistentContext('~/.crawlee/persistent-user-data-dir', fromOptions);
+    if (userDataDir || typeof userDataDir === 'string') {
+        const context = await playwright.launchPersistentContext(typeof userDataDir === 'string' ? userDataDir : '', fromOptions);
         return syncAttachVD(context, virtualDisplay);
     }
 
