@@ -35,8 +35,8 @@ export async function NewBrowser<UserDataDir extends string | false = false, Ret
         fromOptions = await launchOptions({ debug, ...launch_options });
     }
 
-    if (userDataDir || typeof userDataDir === 'string') {
-        const context = await playwright.launchPersistentContext(typeof userDataDir === 'string' ? userDataDir : '', fromOptions);
+    if (typeof userDataDir === 'string') {
+        const context = await playwright.launchPersistentContext(userDataDir, fromOptions);
         return syncAttachVD(context, virtualDisplay);
     }
 
