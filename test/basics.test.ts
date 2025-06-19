@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { Camoufox, launchServer } from '../src';
 import { firefox } from 'playwright-core';
+import { mkdtemp } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const TEST_CASES = [
     { os: 'linux', userAgentRegex: /Linux/i },
@@ -75,9 +78,11 @@ test('Playwright connects to Camoufox server', async () => {
 }, 30e3);
 
 test('Persistent context works', async () => {
+    const userDataDir = await mkdtemp(join(tmpdir(), 'user_data_'));
+
     {
         const context = await Camoufox({
-            user_data_dir: './user_data',
+            user_data_dir: userDataDir,
             headless: true,
         });
 
@@ -95,7 +100,7 @@ test('Persistent context works', async () => {
     
     {
         const context = await Camoufox({
-            user_data_dir: './user_data',
+            user_data_dir: userDataDir,
             headless: true,
         });
 
