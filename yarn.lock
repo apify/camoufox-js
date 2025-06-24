@@ -3132,8 +3132,8 @@ __metadata:
   linkType: hard
 
 "ua-parser-js@npm:^2.0.2":
-  version: 2.0.3
-  resolution: "ua-parser-js@npm:2.0.3"
+  version: 2.0.4
+  resolution: "ua-parser-js@npm:2.0.4"
   dependencies:
     "@types/node-fetch": "npm:^2.6.12"
     detect-europe-js: "npm:^0.1.2"
@@ -3142,7 +3142,7 @@ __metadata:
     ua-is-frozen: "npm:^0.1.2"
   bin:
     ua-parser-js: script/cli.js
-  checksum: 10c0/0fd098a19c11ecddf35f65a9a86a44e4d6147fbed4ad1813d0142c55d305ba2220f41b48c5a60f082552ff4a93bbb5edb1b24de0af45271d1735b63794fef1e0
+  checksum: 10c0/ddcbccf0f1ed6c12ddfdbd48047d2761f047b0041e0e65935698120d05e970a176cfa3655b6d82c7ad56603e8e940fd1b31806260732c3466986790e5bf16162
   languageName: node
   linkType: hard
 
