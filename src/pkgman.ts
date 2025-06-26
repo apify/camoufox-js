@@ -11,7 +11,7 @@ import {
     UnsupportedArchitecture,
     UnsupportedOS,
     UnsupportedVersion,
-} from './exceptions.js' 
+} from './exceptions.js'
 import AdmZip from 'adm-zip';
 import * as yaml from 'js-yaml';
 import ProgressBar from 'progress';
@@ -160,7 +160,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
         this.arch = CamoufoxFetcher.getPlatformArch();
         this.pattern = new RegExp(`camoufox-(.+)-(.+)-${OS_NAME}\\.${this.arch}\\.zip`);
     }
-    
+
     async init() {
         await this.fetchLatest();
     }
@@ -206,7 +206,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
         return Buffer.from(await response.arrayBuffer());
     }
 
-    async extractZip(zipFile: Buffer): Promise<void> {
+    async extractZip(zipFile: string | Buffer): Promise<void> {
         const zip = new AdmZip(zipFile);
         zip.extractAllTo(INSTALL_DIR.toString(), true);
     }
@@ -229,8 +229,14 @@ export class CamoufoxFetcher extends GitHubDownloader {
         try {
             fs.mkdirSync(INSTALL_DIR, { recursive: true });
 
-            const zipFile = await webdl(this.url, 'Downloading Camoufox...', true);
-            await this.extractZip(zipFile);
+            const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'camoufox-'));
+            const tempFilePath = path.join(tempDir, 'camoufox.zip');
+            const tempFileStream = fs.createWriteStream(tempFilePath);
+
+            await webdl(this.url, 'Downloading Camoufox...', true, tempFileStream);
+            await new Promise(r => tempFileStream.close(r));
+
+            await this.extractZip(tempFilePath);
             this.setVersion();
 
             if (OS_NAME !== 'win') {
