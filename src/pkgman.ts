@@ -16,6 +16,7 @@ import AdmZip from 'adm-zip';
 import * as yaml from 'js-yaml';
 import ProgressBar from 'progress';
 import { Writable } from 'stream';
+import { setTimeout } from 'timers/promises';
 
 const ARCH_MAP: { [key: string]: string } = {
     'x64': 'x86_64',
@@ -139,6 +140,7 @@ export class GitHubDownloader {
                     break;
             } catch (e) {
                 console.error(e, `retrying (${attempts + 1}/${retries})...`);
+                await setTimeout(5e3);
             }
             attempts++;
         }
@@ -353,18 +355,19 @@ export async function webdl(
     buffer: Writable | null = null,
     { retries }: { retries: number } = { retries: 5 }
 ): Promise<Buffer> {
-    let attempt = 0;
+    let attempts = 0;
     let response: Response | undefined;
 
-    while (attempt < retries) {
+    while (attempts < retries) {
         try {
             response = await fetch(url);
             if (response.ok)
                 break;
         } catch (e) {
-            console.error(e, `retrying (${attempt + 1}/${retries})...`);
+            console.error(e, `retrying (${attempts + 1}/${retries})...`);
+            await setTimeout(5e3);
         }
-        attempt++;
+        attempts++;
     }
 
     if (!response || !response.ok) {
