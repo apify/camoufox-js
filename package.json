@@ -15,6 +15,7 @@
   "type": "module",
   "keywords": [],
   "author": "",
+  "repository": "apify/camoufox-js",
   "license": "MPL-2.0",
   "description": "Experimental JS port of Camoufox for Python.",
   "packageManager": "yarn@4.9.2",
