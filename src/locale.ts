@@ -130,8 +130,10 @@ export function handleLocales(locales: string | string[], config: Record<string,
         locales = locales.split(',').map(loc => loc.trim());
     }
 
-    const intlLocale = handleLocale(locales[0]);
-    config = { ...config, ...intlLocale.asConfig() };
+    const intlLocale = handleLocale(locales[0]).asConfig();
+    for (const key in intlLocale) {
+        config[key] = intlLocale[key];
+    }
 
     if (locales.length < 2) {
         return;

@@ -413,7 +413,7 @@ export interface LaunchOptions {
 
 /**
  * Convert a Playwright proxy string to a URL object.
- * 
+ *
  * Implementation from https://github.com/microsoft/playwright/blob/3873b72ac1441ca691f7594f0ed705bd84518f93/packages/playwright-core/src/server/browserContext.ts#L737-L747
  */
 function getProxyUrl(proxy: PlaywrightLaunchOptions['proxy'] | string): URL | null {
@@ -708,7 +708,7 @@ export async function launchOptions({
         ...getEnvVars(config, targetOS),
         ...process.env,
     }
-    
+
     // Prepare the executable path
     if (executable_path) {
         executable_path = executable_path.toString();
@@ -725,7 +725,7 @@ export async function launchOptions({
             server: proxyUrl.origin,
             username: proxyUrl.username,
             password: proxyUrl.password,
-            bypass: typeof proxy === 'string' ? undefined : proxy?.bypass, 
+            bypass: typeof proxy === 'string' ? undefined : proxy?.bypass,
         } : undefined,
         "headless": headless,
         ...launch_options,
