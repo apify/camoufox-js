@@ -153,7 +153,7 @@ function determineUAOS(userAgent: string): 'mac' | 'win' | 'lin' {
     if (!parsedUA) {
         throw new Error("Could not determine OS from user agent");
     }
-    if (parsedUA.startsWith("Mac")) {
+    if (parsedUA.startsWith("macOS")) {
         return 'mac';
     }
     if (parsedUA.startsWith("Windows")) {
