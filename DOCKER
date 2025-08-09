@@ -1,0 +1,55 @@
+# Stage 1: Build
+FROM node:18-alpine AS build
+
+# Instala dependências básicas
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    git \
+    dumb-init
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Copia os arquivos do package.json e package-lock (ou yarn.lock)
+COPY package.json yarn.lock* ./
+
+# Instala dependências do projeto
+RUN yarn install --frozen-lockfile || npm install
+
+# Copia todo o código fonte
+COPY . .
+
+# Se necessário, compile TypeScript
+RUN yarn build || npm run build || echo "No build step defined"
+
+# Stage 2: Final image
+FROM node:18-alpine AS runner
+
+# Instala dependências para o runtime
+RUN apk add --no-cache \
+    dumb-init \
+    libstdc++ \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Copia apenas as dependências de produção e o código compilado (se houver)
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app ./
+
+# Setando variáveis de ambiente úteis (ajuste conforme necessário)
+ENV NODE_ENV=production
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Exemplo: caso queira usar o navegador baixado via `npx camoufox-js fetch`, ajuste conforme documentação
+
+# Usa dumb-init para lidar com sinais corretamente
+ENTRYPOINT ["dumb-init", "--"]
+
+# Comando padrão para iniciar sua aplicação:
+CMD ["node", "src/index.js"]
