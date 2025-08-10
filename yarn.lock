@@ -2028,12 +2028,12 @@ __metadata:
   linkType: hard
 
 "maxmind@npm:^4.3.24":
-  version: 4.3.28
-  resolution: "maxmind@npm:4.3.28"
+  version: 4.3.29
+  resolution: "maxmind@npm:4.3.29"
   dependencies:
     mmdb-lib: "npm:2.2.1"
-    tiny-lru: "npm:11.3.3"
-  checksum: 10c0/078d04036785ce1ecbfb4ecbf3be3cd6479410efc79372252cc046e4724c49fba6898ece4da568202fb8e399469c1e874784417a37e1f06fafadf86a979333b0
+    tiny-lru: "npm:11.3.4"
+  checksum: 10c0/fe378cbb291a1624cc34367f71560a92d5a4bfbe7027c642bde7d32361ca057b37ffea11da032a819b5028707e8d08d24a6b1172aa3962a760ee36c5264db96a
   languageName: node
   linkType: hard
 
@@ -3029,10 +3029,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tiny-lru@npm:11.3.3":
-  version: 11.3.3
-  resolution: "tiny-lru@npm:11.3.3"
-  checksum: 10c0/9e73857424abdc24988234a6e5fd6549cb8aa88a94d2dfa6547187c14bda96b46cdc2fc10dbf665fb5a3118439d3ad0dc90264f3c90ceaf0c7259cc55c70a477
+"tiny-lru@npm:11.3.4":
+  version: 11.3.4
+  resolution: "tiny-lru@npm:11.3.4"
+  checksum: 10c0/f4839fe83e2b8ae41e992bfa9b9fdcb1f30743d68a46d35d210d1cacc1cbd49049c1e51e37d5880c92491b820409e292e1c1307cb5b0793c5eb31572be48605d
   languageName: node
   linkType: hard
 
