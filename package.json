@@ -20,7 +20,7 @@
   "packageManager": "yarn@4.9.2",
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "commander": "^13.1.0",
+    "commander": "^14.0.0",
     "fingerprint-generator": "^2.1.66",
     "impit": "^0.5.0",
     "js-yaml": "^4.1.0",
