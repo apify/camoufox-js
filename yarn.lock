@@ -1675,74 +1675,74 @@ __metadata:
   languageName: node
   linkType: hard
 
-"impit-darwin-arm64@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-darwin-arm64@npm:0.5.3"
+"impit-darwin-arm64@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-darwin-arm64@npm:0.5.4"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"impit-darwin-x64@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-darwin-x64@npm:0.5.3"
+"impit-darwin-x64@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-darwin-x64@npm:0.5.4"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"impit-linux-arm64-gnu@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-linux-arm64-gnu@npm:0.5.3"
+"impit-linux-arm64-gnu@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-linux-arm64-gnu@npm:0.5.4"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"impit-linux-arm64-musl@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-linux-arm64-musl@npm:0.5.3"
+"impit-linux-arm64-musl@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-linux-arm64-musl@npm:0.5.4"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"impit-linux-x64-gnu@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-linux-x64-gnu@npm:0.5.3"
+"impit-linux-x64-gnu@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-linux-x64-gnu@npm:0.5.4"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"impit-linux-x64-musl@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-linux-x64-musl@npm:0.5.3"
+"impit-linux-x64-musl@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-linux-x64-musl@npm:0.5.4"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"impit-win32-arm64-msvc@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-win32-arm64-msvc@npm:0.5.3"
+"impit-win32-arm64-msvc@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-win32-arm64-msvc@npm:0.5.4"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"impit-win32-x64-msvc@npm:0.5.3":
-  version: 0.5.3
-  resolution: "impit-win32-x64-msvc@npm:0.5.3"
+"impit-win32-x64-msvc@npm:0.5.4":
+  version: 0.5.4
+  resolution: "impit-win32-x64-msvc@npm:0.5.4"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
 "impit@npm:^0.5.0":
-  version: 0.5.3
-  resolution: "impit@npm:0.5.3"
+  version: 0.5.4
+  resolution: "impit@npm:0.5.4"
   dependencies:
-    impit-darwin-arm64: "npm:0.5.3"
-    impit-darwin-x64: "npm:0.5.3"
-    impit-linux-arm64-gnu: "npm:0.5.3"
-    impit-linux-arm64-musl: "npm:0.5.3"
-    impit-linux-x64-gnu: "npm:0.5.3"
-    impit-linux-x64-musl: "npm:0.5.3"
-    impit-win32-arm64-msvc: "npm:0.5.3"
-    impit-win32-x64-msvc: "npm:0.5.3"
+    impit-darwin-arm64: "npm:0.5.4"
+    impit-darwin-x64: "npm:0.5.4"
+    impit-linux-arm64-gnu: "npm:0.5.4"
+    impit-linux-arm64-musl: "npm:0.5.4"
+    impit-linux-x64-gnu: "npm:0.5.4"
+    impit-linux-x64-musl: "npm:0.5.4"
+    impit-win32-arm64-msvc: "npm:0.5.4"
+    impit-win32-x64-msvc: "npm:0.5.4"
   dependenciesMeta:
     impit-darwin-arm64:
       optional: true
@@ -1760,7 +1760,7 @@ __metadata:
       optional: true
     impit-win32-x64-msvc:
       optional: true
-  checksum: 10c0/8a8ea07b3a679d9cdc39b8b20abe46d97e4e2cfbb1ab6d809eb06d1124b97b3f4cfebf10dea103c8d55ef08584aad79d5c4785d9db6f37d3d6b311dfb15dfdad
+  checksum: 10c0/73259f10345b4a22038f2521a5956fc5411a0512d9188870eb8dc81409ceaccaf25c610172ed22084e36439c903fcc04dc9a6bfaa5b239009144e6d157c54378
   languageName: node
   linkType: hard
 
