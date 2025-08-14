@@ -882,7 +882,7 @@ __metadata:
     impit: "npm:^0.5.0"
     js-yaml: "npm:^4.1.0"
     language-tags: "npm:^2.0.1"
-    maxmind: "npm:^4.3.24"
+    maxmind: "npm:^5.0.0"
     playwright-core: "npm:^1.53.1"
     progress: "npm:^2.0.3"
     rimraf: "npm:^6.0.1"
@@ -2027,13 +2027,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"maxmind@npm:^4.3.24":
-  version: 4.3.29
-  resolution: "maxmind@npm:4.3.29"
+"maxmind@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "maxmind@npm:5.0.0"
   dependencies:
-    mmdb-lib: "npm:2.2.1"
+    mmdb-lib: "npm:3.0.1"
     tiny-lru: "npm:11.3.4"
-  checksum: 10c0/fe378cbb291a1624cc34367f71560a92d5a4bfbe7027c642bde7d32361ca057b37ffea11da032a819b5028707e8d08d24a6b1172aa3962a760ee36c5264db96a
+  checksum: 10c0/c4b3215ec09da1a97d50b9432b07bf7a6cdc15693976f335e28fbc0ab8780b27487e3f6e35d6791fb477ced0f11c71856ed3416f124abbdafd96f314ebcb1c65
   languageName: node
   linkType: hard
 
@@ -2236,10 +2236,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mmdb-lib@npm:2.2.1":
-  version: 2.2.1
-  resolution: "mmdb-lib@npm:2.2.1"
-  checksum: 10c0/125404d98f10c683ff10ffe6aa9455a13dc323a4c3f43ae0f414d542e8cec3fd9077333689b2f33ac5464629c53c72ba642075b3c184bed358d67dfe83aeb164
+"mmdb-lib@npm:3.0.1":
+  version: 3.0.1
+  resolution: "mmdb-lib@npm:3.0.1"
+  checksum: 10c0/09d1d05f62dd4e580d4fd9077ac82ec6cc65c87a900dde7a97045c43e3ec7335aecab1fc43e8d66aaa27136de41461fe076d19879017030cd638aca346b21364
   languageName: node
   linkType: hard
 

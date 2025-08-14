@@ -32,7 +32,7 @@
     "impit": "^0.5.0",
     "js-yaml": "^4.1.0",
     "language-tags": "^2.0.1",
-    "maxmind": "^4.3.24",
+    "maxmind": "^5.0.0",
     "progress": "^2.0.3",
     "sqlite3": "^5.1.7",
     "ua-parser-js": "^2.0.2",
