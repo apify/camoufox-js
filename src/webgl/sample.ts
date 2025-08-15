@@ -33,7 +33,7 @@ export async function sampleWebGL(os: 'win' | 'mac' | 'lin', vendor?: string, re
 
     return new Promise<WebGLData>((resolve, reject) => {
         try {
-            const rows: WebGLData[] = db.prepare(query).all(...params) as any;
+            const rows: WebGLData[] = db.prepare(query).all(...params) as WebGLData[];
 
             if (rows.length === 0) {
                 reject(new Error(`No WebGL data found for OS: ${os}`));
@@ -44,7 +44,7 @@ export async function sampleWebGL(os: 'win' | 'mac' | 'lin', vendor?: string, re
                 const result = rows[0]!;
                 if (result[os]! <= 0) {
                     const pairs = db.prepare(`SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os} > 0`).all();
-                    reject(new Error(`Vendor "${vendor}" and renderer "${renderer}" combination not valid for ${os}. Possible pairs: ${pairs.map((pair: any) => `${pair.vendor}, ${pair.renderer}`).join(', ')}`));
+                    reject(new Error(`Vendor "${vendor}" and renderer "${renderer}" combination not valid for ${os}. Possible pairs: ${(pairs as Array<VendorRenderer>).map((pair) => `${pair.vendor}, ${pair.renderer}`).join(', ')}`));
                     return;
                 }
                 resolve(JSON.parse(result.data));
@@ -78,8 +78,13 @@ export async function sampleWebGL(os: 'win' | 'mac' | 'lin', vendor?: string, re
     });
 }
 
+interface VendorRenderer {
+    vendor: string;
+    renderer: string;
+}
+
 interface PossiblePairs {
-    [key: string]: Array<{ vendor: string, renderer: string }>;
+    [key: string]: Array<VendorRenderer>;
 }
 
 export async function getPossiblePairs(): Promise<PossiblePairs> {
@@ -95,7 +100,7 @@ export async function getPossiblePairs(): Promise<PossiblePairs> {
                     `SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os_type} > 0 ORDER BY ${os_type} DESC`
                 ).all();
 
-                result[os_type] = rows as any;
+                result[os_type] = rows as Array<{ vendor: string, renderer: string }>;
             });
 
             resolve(result);
