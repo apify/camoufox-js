@@ -30,6 +30,7 @@
   "packageManager": "yarn@4.9.2",
   "dependencies": {
     "adm-zip": "^0.5.16",
+    "better-sqlite3": "^12.2.0",
     "commander": "^14.0.0",
     "fingerprint-generator": "^2.1.66",
     "impit": "^0.5.0",
@@ -37,12 +38,12 @@
     "language-tags": "^2.0.1",
     "maxmind": "^5.0.0",
     "progress": "^2.0.3",
-    "sqlite3": "^5.1.7",
     "ua-parser-js": "^2.0.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/js-yaml": "^4.0.9",
     "@types/language-tags": "^1.0.4",
     "@types/node": "^22.13.2",
