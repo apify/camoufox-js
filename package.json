@@ -27,7 +27,7 @@
   },
   "license": "MPL-2.0",
   "description": "Experimental JS port of Camoufox for Python.",
-  "packageManager": "yarn@4.9.2",
+  "packageManager": "yarn@4.9.3",
   "dependencies": {
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^12.2.0",
