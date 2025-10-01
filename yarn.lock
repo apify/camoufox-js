@@ -1113,13 +1113,13 @@ __metadata:
   linkType: hard
 
 "fingerprint-generator@npm:^2.1.66":
-  version: 2.1.73
-  resolution: "fingerprint-generator@npm:2.1.73"
+  version: 2.1.74
+  resolution: "fingerprint-generator@npm:2.1.74"
   dependencies:
-    generative-bayesian-network: "npm:^2.1.73"
-    header-generator: "npm:^2.1.73"
+    generative-bayesian-network: "npm:^2.1.74"
+    header-generator: "npm:^2.1.74"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/69a6e2654343ee61123c65795d70429f0d4e2f0f9695316db9688c4e46ecafa7f430a9cbe9ad7cb5fd8bbc96e4315531f7f06de422a2a03370a196c5b6a29c55
+  checksum: 10c0/d0aed4950d7213bf6f39087cb5af08994868e3ab77c2eddcfe98208f6413a1c902a4841ed24a09133a41129e6efb05f4ec294f85c27e94826de3fad422c83d42
   languageName: node
   linkType: hard
 
@@ -1168,13 +1168,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"generative-bayesian-network@npm:^2.1.73":
-  version: 2.1.73
-  resolution: "generative-bayesian-network@npm:2.1.73"
+"generative-bayesian-network@npm:^2.1.74":
+  version: 2.1.74
+  resolution: "generative-bayesian-network@npm:2.1.74"
   dependencies:
     adm-zip: "npm:^0.5.9"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/fbeddc3fef56f1f98bbc329e9b2b0a6f69a9632349b2e869deafd9d2231149fe836122d08ff97697b48043a2423dc7c6538919b4828798d975fdd77b939279cc
+  checksum: 10c0/77cf92954ab38f68c2ea38b9ab005f49a5a32ea7a9ee383b1d8c1530ebfe9e542a6466fa5d934b3e72632177c9aee96fce333989f4ebdaeb434e40f1c38c4b16
   languageName: node
   linkType: hard
 
@@ -1224,15 +1224,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"header-generator@npm:^2.1.73":
-  version: 2.1.73
-  resolution: "header-generator@npm:2.1.73"
+"header-generator@npm:^2.1.74":
+  version: 2.1.74
+  resolution: "header-generator@npm:2.1.74"
   dependencies:
     browserslist: "npm:^4.21.1"
-    generative-bayesian-network: "npm:^2.1.73"
+    generative-bayesian-network: "npm:^2.1.74"
     ow: "npm:^0.28.1"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/7b385e443c6e6357b6dbcff285ae73a1639cd3f71889370ec33a6fbd0341a87ef11500606aabc11bcf046c0338530a5c61c750f02f82f87409ad51f8cbc60928
+  checksum: 10c0/b38ebae20a4af93700241ecc9de97d250da5c462b9776aebec76b57457816f31b9015d22f7ae75ac8079fc264c3d1d1366c5dc07501707ccb22d540db14534d1
   languageName: node
   linkType: hard
 
