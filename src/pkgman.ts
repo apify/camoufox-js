@@ -13,7 +13,6 @@ import {
     UnsupportedVersion,
 } from './exceptions.js'
 import AdmZip from 'adm-zip';
-import * as yaml from 'js-yaml';
 import ProgressBar from 'progress';
 import { Writable } from 'stream';
 import { setTimeout } from 'timers/promises';
@@ -420,13 +419,4 @@ export async function unzip(
     if (bar) {
         console.log('Extraction complete.');
     }
-}
-
-export function loadYaml(file: string): { [key: string]: any } {
-    let filePath = file;
-    if (!path.isAbsolute(file)) {
-        filePath = path.join(LOCAL_DATA.toString(), file);
-    }
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    return yaml.load(fileContents) as { [key: string]: any };
 }

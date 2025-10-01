@@ -3,6 +3,7 @@
 // from ua_parser import user_agent_parser
 
 import path from 'path';
+import FONTS from './data-files/fonts.config.js';
 import { DefaultAddons, addDefaultAddons, confirmPaths } from './addons.js';
 import { InvalidOS, InvalidPropertyType, NonFirefoxFingerprint, UnknownProperty } from './exceptions.js';
 import { fromBrowserforge, generateFingerprint, SUPPORTED_OS } from './fingerprints.js';
@@ -13,7 +14,6 @@ import { VirtualDisplay } from './virtdisplay.js';
 import { LeakWarning } from './warnings.js';
 import { sampleWebGL } from './webgl/sample.js';
 import { PathLike, readFileSync } from 'fs';
-import { join } from 'path';
 import { UAParser } from 'ua-parser-js';
 import { Fingerprint, FingerprintGeneratorOptions } from 'fingerprint-generator';
 
@@ -181,9 +181,8 @@ function getScreenCons(headless?: boolean): Screen | undefined {
     return undefined;
 }
 
-function updateFonts(config: Record<string, any>, targetOS: string): void {
-    const fontsPath = join(import.meta.dirname, 'data-files', 'fonts.json');
-    const fonts = JSON.parse(readFileSync(fontsPath, 'utf-8'))[targetOS];
+function updateFonts(config: Record<string, any>, targetOS: 'mac' | 'win' | 'lin'): void {
+    const fonts = FONTS[targetOS];
 
     if (config.fonts) {
         config.fonts = Array.from(new Set([...fonts, ...config.fonts]));

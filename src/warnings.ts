@@ -1,7 +1,4 @@
-import { join } from 'path';
-import { loadYaml } from './pkgman.js';
-
-const WARNINGS_DATA = loadYaml(join(import.meta.dirname, 'data-files', 'warnings.yml'));
+import WARNINGS_DATA from './data-files/warnings.config.js';
 
 export class LeakWarning extends Error {
     constructor(message: string) {
@@ -10,7 +7,7 @@ export class LeakWarning extends Error {
     }
 
     static warn(warningKey: string, iKnowWhatImDoing?: boolean): void {
-        let warning = WARNINGS_DATA[warningKey];
+        let warning = (WARNINGS_DATA as Record<string, string>)[warningKey];
         if (iKnowWhatImDoing) {
             return;
         }

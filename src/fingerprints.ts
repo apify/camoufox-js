@@ -1,10 +1,8 @@
-import { join } from 'node:path';
-import { loadYaml } from './pkgman.js';
+import BROWSERFORGE_DATA from './data-files/browserforge.config.js';
 import { Fingerprint, FingerprintGenerator, FingerprintGeneratorOptions, ScreenFingerprint } from 'fingerprint-generator';
 
 export const SUPPORTED_OS = ['linux', 'macos', 'windows'] as const;
 
-const BROWSERFORGE_DATA = loadYaml(join(import.meta.dirname, 'data-files', 'browserforge.yml'));
 const FP_GENERATOR = new FingerprintGenerator({
     browsers: ['firefox'],
     operatingSystems: SUPPORTED_OS as any,

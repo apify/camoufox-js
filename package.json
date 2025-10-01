@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc && npm run copy-files",
     "test": "vitest",
-    "copy-files": "cp -r src/data-files dist/data-files"
+    "copy-files": "cp -r src/data-files/territoryInfo.xml src/data-files/webgl_data.db dist/data-files/"
   },
   "bin": "dist/__main__.js",
   "files": [
@@ -34,7 +34,6 @@
     "commander": "^14.0.0",
     "fingerprint-generator": "^2.1.66",
     "impit": "^0.5.0",
-    "js-yaml": "^4.1.0",
     "language-tags": "^2.0.1",
     "maxmind": "^5.0.0",
     "progress": "^2.0.3",
@@ -44,7 +43,6 @@
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/js-yaml": "^4.0.9",
     "@types/language-tags": "^1.0.4",
     "@types/node": "^22.13.2",
     "@types/progress": "^2.0.7",
