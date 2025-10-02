@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc && npm run copy-files",
     "test": "vitest",
-    "copy-files": "cp -r src/data-files/territoryInfo.xml src/data-files/webgl_data.db dist/data-files/"
+    "copy-files": "cp -r src/data-files dist/data-files"
   },
   "bin": "dist/__main__.js",
   "files": [

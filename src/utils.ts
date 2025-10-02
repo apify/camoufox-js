@@ -3,7 +3,7 @@
 // from ua_parser import user_agent_parser
 
 import path from 'path';
-import FONTS from './data-files/fonts.config.js';
+import FONTS from './mappings/fonts.config.js';
 import { DefaultAddons, addDefaultAddons, confirmPaths } from './addons.js';
 import { InvalidOS, InvalidPropertyType, NonFirefoxFingerprint, UnknownProperty } from './exceptions.js';
 import { fromBrowserforge, generateFingerprint, SUPPORTED_OS } from './fingerprints.js';

@@ -1,4 +1,4 @@
-import WARNINGS_DATA from './data-files/warnings.config.js';
+import WARNINGS_DATA from './mappings/warnings.config.js';
 
 export class LeakWarning extends Error {
     constructor(message: string) {
