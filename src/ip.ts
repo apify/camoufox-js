@@ -28,7 +28,7 @@ export class ProxyHelper {
 	}
 
 	static asString(proxy: Proxy): string {
-		const { schema, url, port } = this.parseServer(proxy.server);
+		const { schema, url, port } = ProxyHelper.parseServer(proxy.server);
 		let result = `${schema}://`;
 		if (proxy.username) {
 			result += proxy.username;

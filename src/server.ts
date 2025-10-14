@@ -1,5 +1,5 @@
-import { BrowserServer, firefox } from "playwright-core";
-import { LaunchOptions, launchOptions } from "./utils.js";
+import { type BrowserServer, firefox } from "playwright-core";
+import { type LaunchOptions, launchOptions } from "./utils.js";
 
 export async function launchServer({
 	port,

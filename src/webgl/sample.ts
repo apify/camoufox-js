@@ -1,6 +1,6 @@
-import { OS_ARCH_MATRIX } from "../pkgman.js";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { OS_ARCH_MATRIX } from "../pkgman.js";
 
 // Get database path relative to this file
 const DB_PATH = path.join(

@@ -1,5 +1,8 @@
-import { GitHubDownloader, webdl, INSTALL_DIR } from "./pkgman.js";
-import { LeakWarning } from "./warnings.js";
+import * as fs from "fs";
+import tags from "language-tags";
+import maxmind, { type CityResponse } from "maxmind";
+import * as path from "path";
+import xml2js from "xml2js";
 import {
 	InvalidLocale,
 	MissingRelease,
@@ -9,12 +12,9 @@ import {
 	UnknownTerritory,
 } from "./exceptions.js";
 import { validateIP } from "./ip.js";
-import tags from "language-tags";
-import * as fs from "fs";
-import * as path from "path";
-import maxmind, { CityResponse } from "maxmind";
-import xml2js from "xml2js";
+import { GitHubDownloader, INSTALL_DIR, webdl } from "./pkgman.js";
 import { getAsBooleanFromENV } from "./utils.js";
+import { LeakWarning } from "./warnings.js";
 
 export const ALLOW_GEOIP = true;
 

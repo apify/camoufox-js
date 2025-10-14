@@ -1,6 +1,11 @@
-import { Browser, BrowserContext, BrowserType, firefox } from "playwright-core";
+import {
+	type Browser,
+	type BrowserContext,
+	type BrowserType,
+	firefox,
+} from "playwright-core";
 
-import { LaunchOptions, launchOptions, syncAttachVD } from "./utils.js";
+import { type LaunchOptions, launchOptions, syncAttachVD } from "./utils.js";
 import { VirtualDisplay } from "./virtdisplay.js";
 
 export async function Camoufox<

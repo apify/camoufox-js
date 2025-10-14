@@ -1,9 +1,9 @@
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { firefox } from "playwright-core";
 import { describe, expect, test } from "vitest";
 import { Camoufox, launchServer } from "../src";
-import { firefox } from "playwright-core";
-import { mkdtemp } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 const TEST_CASES = [
 	{ os: "linux", userAgentRegex: /Linux/i },

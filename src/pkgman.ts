@@ -1,9 +1,13 @@
-import { CONSTRAINTS } from "./__version__.js";
+import AdmZip from "adm-zip";
+import { execSync } from "child_process";
+import type { PathLike } from "fs";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as fs from "fs";
-import { execSync } from "child_process";
-import { PathLike } from "fs";
+import ProgressBar from "progress";
+import type { Writable } from "stream";
+import { setTimeout } from "timers/promises";
+import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
 	FileNotFoundError,
@@ -12,10 +16,6 @@ import {
 	UnsupportedOS,
 	UnsupportedVersion,
 } from "./exceptions.js";
-import AdmZip from "adm-zip";
-import ProgressBar from "progress";
-import { Writable } from "stream";
-import { setTimeout } from "timers/promises";
 
 const ARCH_MAP: { [key: string]: string } = {
 	x64: "x86_64",

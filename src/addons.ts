@@ -1,7 +1,7 @@
-import { InvalidAddonPath } from "./exceptions.js";
-import { getPath, unzip, webdl } from "./pkgman.js";
 import fs from "fs";
 import { join } from "path";
+import { InvalidAddonPath } from "./exceptions.js";
+import { getPath, unzip, webdl } from "./pkgman.js";
 import { getAsBooleanFromENV } from "./utils.js";
 
 export const DefaultAddons = {

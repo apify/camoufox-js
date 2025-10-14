@@ -1,10 +1,10 @@
-import BROWSERFORGE_DATA from "./mappings/browserforge.config.js";
 import {
-	Fingerprint,
+	type Fingerprint,
 	FingerprintGenerator,
-	FingerprintGeneratorOptions,
-	ScreenFingerprint,
+	type FingerprintGeneratorOptions,
+	type ScreenFingerprint,
 } from "fingerprint-generator";
+import BROWSERFORGE_DATA from "./mappings/browserforge.config.js";
 
 export const SUPPORTED_OS = ["linux", "macos", "windows"] as const;
 
@@ -50,7 +50,7 @@ function handleScreenXY(
 	fpScreen: ScreenFingerprint,
 ): void {
 	if ("window.screenY" in camoufoxData) return;
-	let screenX = fpScreen.screenX;
+	const screenX = fpScreen.screenX;
 	if (!screenX) {
 		camoufoxData["window.screenX"] = 0;
 		camoufoxData["window.screenY"] = 0;
@@ -60,7 +60,7 @@ function handleScreenXY(
 		camoufoxData["window.screenY"] = screenX;
 		return;
 	}
-	let screenY = fpScreen.availHeight - fpScreen.outerHeight;
+	const screenY = fpScreen.availHeight - fpScreen.outerHeight;
 	if (screenY === 0) {
 		camoufoxData["window.screenY"] = 0;
 	} else if (screenY > 0) {

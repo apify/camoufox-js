@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
+import { Command } from "commander";
+import { existsSync, rmSync } from "fs";
 import { DefaultAddons, maybeDownloadAddons } from "./addons.js";
 import { ALLOW_GEOIP, downloadMMDB, removeMMDB } from "./locale.js";
-import { INSTALL_DIR, CamoufoxFetcher, installedVerStr } from "./pkgman.js";
-import { Command } from "commander";
-
-import { Camoufox } from "./sync_api.js";
-import { existsSync, rmSync } from "fs";
-import { getAsBooleanFromENV } from "./utils.js";
+import { CamoufoxFetcher, INSTALL_DIR, installedVerStr } from "./pkgman.js";
 import { launchServer } from "./server.js";
+import { Camoufox } from "./sync_api.js";
+import { getAsBooleanFromENV } from "./utils.js";
 
 class CamoufoxUpdate extends CamoufoxFetcher {
 	currentVerStr: string | null;
