@@ -39,8 +39,10 @@ describe("Fingerprint consistency", () => {
 
 			await page.goto("https://api.apify.com/v2/browser-info");
 
-			const data = await page.evaluate(() => JSON.parse(document.querySelector('pre')?.textContent ?? ''));
-			const httpAgent = data.headers['user-agent'];
+			const data = await page.evaluate(() =>
+				JSON.parse(document.querySelector("pre")?.textContent ?? ""),
+			);
+			const httpAgent = data.headers["user-agent"];
 			const jsAgent = await page.evaluate(() => navigator.userAgent.toString());
 
 			expect(httpAgent).toEqual(jsAgent);
