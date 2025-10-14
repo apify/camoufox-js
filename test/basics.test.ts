@@ -19,7 +19,7 @@ describe("virtual display", () => {
 		} as any);
 
 		const page = await browser.newPage();
-		await page.goto("http://httpbin.org/user-agent");
+		await page.goto("https://api.apify.com/v2/browser-info");
 		const userAgent = await page.evaluate(() => navigator.userAgent.toString());
 		expect(userAgent).toMatch(/Linux/i);
 		await browser.close();
@@ -37,14 +37,11 @@ describe("Fingerprint consistency", () => {
 
 			const page = await browser.newPage();
 
-			await page.goto("http://httpbin.org/user-agent");
+			await page.goto("https://api.apify.com/v2/browser-info");
 
-			const [httpAgent, jsAgent] = await page.evaluate(() => {
-				return [
-					JSON.parse(document.body.innerText)["user-agent"],
-					navigator.userAgent.toString(),
-				];
-			});
+			const data = await page.evaluate(() => JSON.parse(document.querySelector('pre')?.textContent ?? ''));
+			const httpAgent = data.headers['user-agent'];
+			const jsAgent = await page.evaluate(() => navigator.userAgent.toString());
 
 			expect(httpAgent).toEqual(jsAgent);
 			expect(httpAgent).toMatch(userAgentRegex);
@@ -68,7 +65,7 @@ test("Playwright connects to Camoufox server", async () => {
 
 	const browser = await firefox.connect(server.wsEndpoint());
 	const page = await browser.newPage();
-	await page.goto("http://httpbin.org/user-agent");
+	await page.goto("https://api.apify.com/v2/browser-info");
 
 	const userAgent = await page.evaluate(() => navigator.userAgent.toString());
 	expect(userAgent).toMatch(/Firefox/);
