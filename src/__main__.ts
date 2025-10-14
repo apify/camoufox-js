@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
+import { existsSync, rmSync } from "node:fs";
 import { Command } from "commander";
-import { existsSync, rmSync } from "fs";
 import { DefaultAddons, maybeDownloadAddons } from "./addons.js";
 import { ALLOW_GEOIP, downloadMMDB, removeMMDB } from "./locale.js";
 import { CamoufoxFetcher, INSTALL_DIR, installedVerStr } from "./pkgman.js";
@@ -127,7 +127,7 @@ program.command("version").action(async () => {
 	try {
 		const pkgVersion = require("pkg-version");
 		console.log(`Pip package:\tv${pkgVersion("camoufox")}`);
-	} catch (error) {
+	} catch (_error) {
 		console.log("Pip package:\tNot installed!", "red");
 	}
 

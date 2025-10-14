@@ -1,8 +1,8 @@
-import { type ChildProcess, execFileSync, spawn } from "child_process";
+import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 // import { globSync } from 'glob';
-import { randomInt } from "crypto";
-import { existsSync } from "fs";
-import { tmpdir } from "os";
+import { randomInt } from "node:crypto";
+import { existsSync } from "node:fs";
+import { tmpdir } from "node:os";
 import {
 	CannotExecuteXvfb,
 	CannotFindXvfb,
@@ -102,7 +102,7 @@ export class VirtualDisplay {
 	}
 
 	public static _get_lock_files(): string[] {
-		const tmpd = process.env.TMPDIR || tmpdir();
+		const _tmpd = process.env.TMPDIR || tmpdir();
 		try {
 			return [];
 			// return globSync(join(tmpd, ".X*-lock")).filter(p => existsSync(p));
@@ -113,7 +113,7 @@ export class VirtualDisplay {
 
 	private static _free_display(): number {
 		const ls = VirtualDisplay._get_lock_files().map((x) =>
-			parseInt(x.split("X")[1].split("-")[0]),
+			parseInt(x.split("X")[1].split("-")[0], 10),
 		);
 		return ls.length ? Math.max(99, Math.max(...ls) + randomInt(3, 20)) : 99;
 	}

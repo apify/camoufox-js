@@ -42,7 +42,7 @@ export async function NewBrowser<
 
 	if (headless === "virtual") {
 		virtualDisplay = new VirtualDisplay(debug);
-		launch_options["virtual_display"] = virtualDisplay.get();
+		launch_options.virtual_display = virtualDisplay.get();
 		launch_options.headless = false;
 	} else {
 		launch_options.headless ||= headless;

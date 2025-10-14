@@ -1,12 +1,12 @@
+import { execSync } from "node:child_process";
+import type { PathLike } from "node:fs";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import type { Writable } from "node:stream";
+import { setTimeout } from "node:timers/promises";
 import AdmZip from "adm-zip";
-import { execSync } from "child_process";
-import type { PathLike } from "fs";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
 import ProgressBar from "progress";
-import type { Writable } from "stream";
-import { setTimeout } from "timers/promises";
 import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
@@ -68,7 +68,9 @@ class Version {
 	private buildSortedRel(): number[] {
 		const parts = this.release
 			.split(".")
-			.map((x) => (isNaN(Number(x)) ? x.charCodeAt(0) - 1024 : Number(x)));
+			.map((x) =>
+				Number.isNaN(Number(x)) ? x.charCodeAt(0) - 1024 : Number(x),
+			);
 		while (parts.length < 5) {
 			parts.push(0);
 		}

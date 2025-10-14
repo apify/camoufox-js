@@ -1,5 +1,5 @@
-import fs from "fs";
-import { join } from "path";
+import fs from "node:fs";
+import { join } from "node:path";
 import { InvalidAddonPath } from "./exceptions.js";
 import { getPath, unzip, webdl } from "./pkgman.js";
 import { getAsBooleanFromENV } from "./utils.js";
@@ -28,8 +28,8 @@ export function confirmPaths(paths: string[]): void {
 }
 
 export function addDefaultAddons(
-	addonsList: string[],
-	excludeList: (keyof typeof DefaultAddons)[] = [],
+	_addonsList: string[],
+	_excludeList: (keyof typeof DefaultAddons)[] = [],
 ): void {
 	// TODO - enable addons
 	/**

@@ -2,12 +2,12 @@
 // from screeninfo import get_monitors
 // from ua_parser import user_agent_parser
 
+import { type PathLike, readFileSync } from "node:fs";
+import path from "node:path";
 import type {
 	Fingerprint,
 	FingerprintGeneratorOptions,
 } from "fingerprint-generator";
-import { type PathLike, readFileSync } from "fs";
-import path from "path";
 import type { LaunchOptions as PlaywrightLaunchOptions } from "playwright-core";
 import { UAParser } from "ua-parser-js";
 import {
@@ -72,7 +72,7 @@ function getEnvVars(configMap: ConfigMap, userAgentOS: string): EnvVars {
 
 	if (OS_NAME === "lin") {
 		const fontconfigPath = getPath(path.join("fontconfig", userAgentOS));
-		envVars["FONTCONFIG_PATH"] = fontconfigPath;
+		envVars.FONTCONFIG_PATH = fontconfigPath;
 	}
 
 	return envVars;
@@ -247,7 +247,7 @@ function validateOS(
 	return [os];
 }
 
-function cleanLocals(data: Record<string, any>): Record<string, any> {
+function _cleanLocals(data: Record<string, any>): Record<string, any> {
 	delete data.playwright;
 	delete data.persistentContext;
 	return data;
@@ -308,7 +308,7 @@ function warnManualConfig(config: Record<string, any>): void {
 	}
 }
 
-async function asyncAttachVD(
+async function _asyncAttachVD(
 	browser: any,
 	virtualDisplay?: VirtualDisplay,
 ): Promise<any> {
@@ -482,9 +482,9 @@ function getProxyUrl(
 		// new URL('localhost:8080') fails to parse host or protocol
 		// In both of these cases, we need to try re-parse URL with `http://` prefix.
 		url = new URL(server);
-		if (!url.host || !url.protocol) url = new URL("http://" + server);
-	} catch (e) {
-		url = new URL("http://" + server);
+		if (!url.host || !url.protocol) url = new URL(`http://${server}`);
+	} catch (_e) {
+		url = new URL(`http://${server}`);
 	}
 
 	if (username) url.username = username;
@@ -559,7 +559,7 @@ export async function launchOptions({
 
 	// Handle virtual display
 	if (virtual_display) {
-		env["DISPLAY"] = virtual_display;
+		env.DISPLAY = virtual_display;
 	}
 
 	// Warn the user for manual config settings
@@ -580,7 +580,7 @@ export async function launchOptions({
 	// Confirm all addon paths are valid
 	if (addons.length > 0) {
 		confirmPaths(addons);
-		config["addons"] = addons;
+		config.addons = addons;
 	}
 
 	// Get the Firefox version
@@ -615,7 +615,7 @@ export async function launchOptions({
 
 	// Update fonts list
 	if (fonts) {
-		config["fonts"] = fonts;
+		config.fonts = fonts;
 	}
 
 	if (custom_fonts_only) {

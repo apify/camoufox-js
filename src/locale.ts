@@ -1,7 +1,7 @@
-import * as fs from "fs";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import tags from "language-tags";
 import maxmind, { type CityResponse } from "maxmind";
-import * as path from "path";
 import xml2js from "xml2js";
 import {
 	InvalidLocale,
@@ -160,8 +160,8 @@ const MMDB_REPO = "P3TERX/GeoLite.mmdb";
 
 class MaxMindDownloader extends GitHubDownloader {
 	checkAsset(asset: Record<string, any>): string | null {
-		if (asset["name"].endsWith("-City.mmdb")) {
-			return asset["browser_download_url"];
+		if (asset.name.endsWith("-City.mmdb")) {
+			return asset.browser_download_url;
 		}
 		return null;
 	}
