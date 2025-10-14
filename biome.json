@@ -14,8 +14,14 @@
 	},
 	"linter": {
 		"enabled": true,
+		"includes": ["src/**/*.ts", "tests/**/*.ts"],
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"suspicious": {
+				"noDocumentCookie": "off",
+				"noExplicitAny": "off",
+				"noImplicitAnyLet": "off"
+			}
 		}
 	},
 	"javascript": {

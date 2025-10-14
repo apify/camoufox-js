@@ -328,15 +328,38 @@ class StatisticalLocaleSelector {
 	}
 
 	private weightedRandomChoice<T>(items: T[], weights: number[]): T {
-		const cumulativeWeights = weights.map(
-			(
-				(sum) => (value: number) =>
-					(sum += value)
-			)(0),
-		);
-		const random =
-			Math.random() * cumulativeWeights[cumulativeWeights.length - 1];
-		return items[cumulativeWeights.findIndex((weight) => weight > random)];
+		if (items.length === 0) {
+			throw new Error("items must not be empty");
+		}
+		if (items.length !== weights.length) {
+			throw new Error("items and weights must have the same length");
+		}
+
+		let total = 0;
+		for (const w of weights) {
+			if (w < 0) {
+				throw new Error("weights must be non-negative");
+			}
+			total += w;
+		}
+
+		// Fallback to uniform choice if all weights are zero
+		if (total === 0) {
+			return items[Math.floor(Math.random() * items.length)];
+		}
+
+		const r = Math.random() * total;
+		let acc = 0;
+
+		for (let i = 0; i < items.length; i++) {
+			acc += weights[i];
+			if (r < acc) {
+				return items[i];
+			}
+		}
+
+		// Numerical edge case
+		return items[items.length - 1];
 	}
 
 	fromRegion(region: string): Locale {
