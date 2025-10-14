@@ -1,59 +1,59 @@
 {
-  "name": "camoufox-js",
-  "version": "0.6.2",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "rimraf dist && tsc && npm run copy-files",
-    "test": "vitest",
-    "copy-files": "cp -r src/data-files dist/data-files"
-  },
-  "bin": "dist/__main__.js",
-  "files": [
-    "dist"
-  ],
-  "type": "module",
-  "keywords": [],
-  "author": "",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/apify/camoufox-js"
-  },
-  "bugs": {
-    "url": "https://github.com/apify/camoufox-js/issues"
-  },
-  "engines": {
-    "node": ">= 20"
-  },
-  "license": "MPL-2.0",
-  "description": "Experimental JS port of Camoufox for Python.",
-  "packageManager": "yarn@4.10.3",
-  "dependencies": {
-    "adm-zip": "^0.5.16",
-    "better-sqlite3": "^12.2.0",
-    "commander": "^14.0.0",
-    "fingerprint-generator": "^2.1.66",
-    "impit": "^0.5.0",
-    "language-tags": "^2.0.1",
-    "maxmind": "^5.0.0",
-    "progress": "^2.0.3",
-    "ua-parser-js": "^2.0.2",
-    "xml2js": "^0.6.2"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.2.6",
-    "@types/adm-zip": "^0.5.7",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/language-tags": "^1.0.4",
-    "@types/node": "^22.13.2",
-    "@types/progress": "^2.0.7",
-    "@types/xml2js": "^0.4.14",
-    "playwright-core": "^1.53.1",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
-  },
-  "peerDependencies": {
-    "playwright-core": "*"
-  }
+	"name": "camoufox-js",
+	"version": "0.6.2",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "rimraf dist && tsc && npm run copy-files",
+		"test": "vitest",
+		"copy-files": "cp -r src/data-files dist/data-files"
+	},
+	"bin": "dist/__main__.js",
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"keywords": [],
+	"author": "",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/apify/camoufox-js"
+	},
+	"bugs": {
+		"url": "https://github.com/apify/camoufox-js/issues"
+	},
+	"engines": {
+		"node": ">= 20"
+	},
+	"license": "MPL-2.0",
+	"description": "Experimental JS port of Camoufox for Python.",
+	"packageManager": "yarn@4.10.3",
+	"dependencies": {
+		"adm-zip": "^0.5.16",
+		"better-sqlite3": "^12.2.0",
+		"commander": "^14.0.0",
+		"fingerprint-generator": "^2.1.66",
+		"impit": "^0.5.0",
+		"language-tags": "^2.0.1",
+		"maxmind": "^5.0.0",
+		"progress": "^2.0.3",
+		"ua-parser-js": "^2.0.2",
+		"xml2js": "^0.6.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.6",
+		"@types/adm-zip": "^0.5.7",
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/language-tags": "^1.0.4",
+		"@types/node": "^22.13.2",
+		"@types/progress": "^2.0.7",
+		"@types/xml2js": "^0.4.14",
+		"playwright-core": "^1.53.1",
+		"rimraf": "^6.0.1",
+		"typescript": "^5.8.3",
+		"vitest": "^3.1.1"
+	},
+	"peerDependencies": {
+		"playwright-core": "*"
+	}
 }

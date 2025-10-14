@@ -1,124 +1,125 @@
-import { describe, expect, test } from 'vitest';
-import { Camoufox, launchServer } from '../src';
-import { firefox } from 'playwright-core';
-import { mkdtemp } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { describe, expect, test } from "vitest";
+import { Camoufox, launchServer } from "../src";
+import { firefox } from "playwright-core";
+import { mkdtemp } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const TEST_CASES = [
-    { os: 'linux', userAgentRegex: /Linux/i },
-    { os: 'windows', userAgentRegex: /Windows/i },
-    { os: 'macos', userAgentRegex: /Mac OS/i },
+	{ os: "linux", userAgentRegex: /Linux/i },
+	{ os: "windows", userAgentRegex: /Windows/i },
+	{ os: "macos", userAgentRegex: /Mac OS/i },
 ];
 
-describe('virtual display', () => {
-    test('should launch', async () => {
-        const browser = await Camoufox({
-            os: 'linux',
-            headless: 'virtual',
-        } as any);
+describe("virtual display", () => {
+	test("should launch", async () => {
+		const browser = await Camoufox({
+			os: "linux",
+			headless: "virtual",
+		} as any);
 
-        const page = await browser.newPage();
-        await page.goto('http://httpbin.org/user-agent');
-        const userAgent = await page.evaluate(() => navigator.userAgent.toString());
-        expect(userAgent).toMatch(/Linux/i);
-        await browser.close();
-
-    }, 10e3); 
+		const page = await browser.newPage();
+		await page.goto("http://httpbin.org/user-agent");
+		const userAgent = await page.evaluate(() => navigator.userAgent.toString());
+		expect(userAgent).toMatch(/Linux/i);
+		await browser.close();
+	}, 10e3);
 });
 
-describe('Fingerprint consistency', () => {
-    test.each(TEST_CASES)('User-Agent matches set OS ($os)', 
-        async ({os, userAgentRegex}) => {
-            const browser = await Camoufox({
-                os,
-                headless: true,
-            } as any);
-            
-            const page = await browser.newPage();
+describe("Fingerprint consistency", () => {
+	test.each(TEST_CASES)(
+		"User-Agent matches set OS ($os)",
+		async ({ os, userAgentRegex }) => {
+			const browser = await Camoufox({
+				os,
+				headless: true,
+			} as any);
 
-            await page.goto('http://httpbin.org/user-agent');
-            
-            const [httpAgent, jsAgent] = await page.evaluate(() => {
-                return [
-                    JSON.parse(document.body.innerText)['user-agent'],
-                    navigator.userAgent.toString(),
-                ]
-            });
+			const page = await browser.newPage();
 
-            expect(httpAgent).toEqual(jsAgent);
-            expect(httpAgent).toMatch(userAgentRegex);
+			await page.goto("http://httpbin.org/user-agent");
 
-            TEST_CASES.forEach(({ os: testOs, userAgentRegex }) => {
-                if (testOs !== os) {
-                    expect(httpAgent).not.toMatch(userAgentRegex);
-                }
-            });
+			const [httpAgent, jsAgent] = await page.evaluate(() => {
+				return [
+					JSON.parse(document.body.innerText)["user-agent"],
+					navigator.userAgent.toString(),
+				];
+			});
 
-            await browser.close();
-        },
-        10e3
-    );
+			expect(httpAgent).toEqual(jsAgent);
+			expect(httpAgent).toMatch(userAgentRegex);
+
+			TEST_CASES.forEach(({ os: testOs, userAgentRegex }) => {
+				if (testOs !== os) {
+					expect(httpAgent).not.toMatch(userAgentRegex);
+				}
+			});
+
+			await browser.close();
+		},
+		10e3,
+	);
 });
 
-test('Playwright connects to Camoufox server', async () => {
-    const server = await launchServer({
-        headless: true,
-    });
+test("Playwright connects to Camoufox server", async () => {
+	const server = await launchServer({
+		headless: true,
+	});
 
-    const browser = await firefox.connect(server.wsEndpoint());
-    const page = await browser.newPage();
-    await page.goto('http://httpbin.org/user-agent');
+	const browser = await firefox.connect(server.wsEndpoint());
+	const page = await browser.newPage();
+	await page.goto("http://httpbin.org/user-agent");
 
-    const userAgent = await page.evaluate(() => navigator.userAgent.toString());
-    expect(userAgent).toMatch(/Firefox/);
-    await browser.close();
+	const userAgent = await page.evaluate(() => navigator.userAgent.toString());
+	expect(userAgent).toMatch(/Firefox/);
+	await browser.close();
 
-    await server.close();
+	await server.close();
 }, 30e3);
 
-test('Persistent context works', async () => {
-    const userDataDir = await mkdtemp(join(tmpdir(), 'user_data_'));
+test("Persistent context works", async () => {
+	const userDataDir = await mkdtemp(join(tmpdir(), "user_data_"));
 
-    {
-        const context = await Camoufox({
-            user_data_dir: userDataDir,
-            headless: true,
-        });
+	{
+		const context = await Camoufox({
+			user_data_dir: userDataDir,
+			headless: true,
+		});
 
-        const page = await context.newPage();
-        await page.goto('https://example.com');
+		const page = await context.newPage();
+		await page.goto("https://example.com");
 
-        await page.evaluate(() => {
-            document.cookie = 'name=value; path=/; domain=example.com; expires=Fri, 31 Dec 9999 23:59:59 GMT';
-        });
-        await page.close();
-        await context.close();
-    }
+		await page.evaluate(() => {
+			document.cookie =
+				"name=value; path=/; domain=example.com; expires=Fri, 31 Dec 9999 23:59:59 GMT";
+		});
+		await page.close();
+		await context.close();
+	}
 
-    let readCookies: any = null;
-    
-    {
-        const context = await Camoufox({
-            user_data_dir: userDataDir,
-            headless: true,
-        });
+	let readCookies: any = null;
 
-        const page = await context.newPage();
-        await page.goto('https://example.com');
+	{
+		const context = await Camoufox({
+			user_data_dir: userDataDir,
+			headless: true,
+		});
 
-        readCookies = await page.evaluate(() => {
-            const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-                const [name, value] = cookie.split('=');
-                acc[name] = value;
-                return acc;
-            }, {});
-            return cookies;
-        });
-        
-        await page.close();
-        await context.close();
-    }
+		const page = await context.newPage();
+		await page.goto("https://example.com");
 
-    expect(readCookies).toEqual({ name: 'value' });
+		readCookies = await page.evaluate(() => {
+			const cookies = document.cookie.split("; ").reduce((acc, cookie) => {
+				const [name, value] = cookie.split("=");
+				acc[name] = value;
+				return acc;
+			}, {});
+			return cookies;
+		});
+
+		await page.close();
+		await context.close();
+	}
+
+	expect(readCookies).toEqual({ name: "value" });
 }, 30e3);

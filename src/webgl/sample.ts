@@ -1,113 +1,134 @@
-import { OS_ARCH_MATRIX } from '../pkgman.js';
-import path from 'node:path';
-import Database from 'better-sqlite3';
+import { OS_ARCH_MATRIX } from "../pkgman.js";
+import path from "node:path";
+import Database from "better-sqlite3";
 
 // Get database path relative to this file
-const DB_PATH = path.join(import.meta.dirname, '..' , 'data-files', 'webgl_data.db');
+const DB_PATH = path.join(
+	import.meta.dirname,
+	"..",
+	"data-files",
+	"webgl_data.db",
+);
 
 interface WebGLData {
-    vendor: string;
-    renderer: string;
-    data: string;
-    win: number;
-    mac: number;
-    lin: number;
-    webGl2Enabled: boolean;
+	vendor: string;
+	renderer: string;
+	data: string;
+	win: number;
+	mac: number;
+	lin: number;
+	webGl2Enabled: boolean;
 }
 
-export async function sampleWebGL(os: 'win' | 'mac' | 'lin', vendor?: string, renderer?: string): Promise<WebGLData> {
-    if (!OS_ARCH_MATRIX[os]) {
-        throw new Error(`Invalid OS: ${os}. Must be one of: win, mac, lin`);
-    }
+export async function sampleWebGL(
+	os: "win" | "mac" | "lin",
+	vendor?: string,
+	renderer?: string,
+): Promise<WebGLData> {
+	if (!OS_ARCH_MATRIX[os]) {
+		throw new Error(`Invalid OS: ${os}. Must be one of: win, mac, lin`);
+	}
 
-    const db = new Database(DB_PATH);
-    let query = '';
-    let params: any[] = [];
+	const db = new Database(DB_PATH);
+	let query = "";
+	let params: any[] = [];
 
-    if (vendor && renderer) {
-        query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE vendor = ? AND renderer = ?`;
-        params = [vendor, renderer];
-    } else {
-        query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE ${os} > 0`;
-    }
+	if (vendor && renderer) {
+		query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE vendor = ? AND renderer = ?`;
+		params = [vendor, renderer];
+	} else {
+		query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE ${os} > 0`;
+	}
 
-    return new Promise<WebGLData>((resolve, reject) => {
-        try {
-            const rows: WebGLData[] = db.prepare(query).all(...params) as WebGLData[];
+	return new Promise<WebGLData>((resolve, reject) => {
+		try {
+			const rows: WebGLData[] = db.prepare(query).all(...params) as WebGLData[];
 
-            if (rows.length === 0) {
-                reject(new Error(`No WebGL data found for OS: ${os}`));
-                return;
-            }
+			if (rows.length === 0) {
+				reject(new Error(`No WebGL data found for OS: ${os}`));
+				return;
+			}
 
-            if (vendor && renderer) {
-                const result = rows[0]!;
-                if (result[os]! <= 0) {
-                    const pairs = db.prepare(`SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os} > 0`).all();
-                    reject(new Error(`Vendor "${vendor}" and renderer "${renderer}" combination not valid for ${os}. Possible pairs: ${(pairs as Array<VendorRenderer>).map((pair) => `${pair.vendor}, ${pair.renderer}`).join(', ')}`));
-                    return;
-                }
-                resolve(JSON.parse(result.data));
-            } else {
-                const dataStrs = rows.map(row => row.data);
-                const probs = rows.map(row => row[os]);
-                const probsArray = probs.map(p => p / probs.reduce((a, b) => a + b, 0));
-                function weightedRandomChoice(weights: number[]): number {
-                    const sum = weights.reduce((acc, weight) => acc + weight, 0);
-                    const threshold = Math.random() * sum;
-                    let cumulativeSum = 0;
+			if (vendor && renderer) {
+				const result = rows[0]!;
+				if (result[os]! <= 0) {
+					const pairs = db
+						.prepare(
+							`SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os} > 0`,
+						)
+						.all();
+					reject(
+						new Error(
+							`Vendor "${vendor}" and renderer "${renderer}" combination not valid for ${os}. Possible pairs: ${(pairs as Array<VendorRenderer>).map((pair) => `${pair.vendor}, ${pair.renderer}`).join(", ")}`,
+						),
+					);
+					return;
+				}
+				resolve(JSON.parse(result.data));
+			} else {
+				const dataStrs = rows.map((row) => row.data);
+				const probs = rows.map((row) => row[os]);
+				const probsArray = probs.map(
+					(p) => p / probs.reduce((a, b) => a + b, 0),
+				);
+				function weightedRandomChoice(weights: number[]): number {
+					const sum = weights.reduce((acc, weight) => acc + weight, 0);
+					const threshold = Math.random() * sum;
+					let cumulativeSum = 0;
 
-                    for (let i = 0; i < weights.length; i++) {
-                        cumulativeSum += weights[i];
-                        if (cumulativeSum >= threshold) {
-                            return i;
-                        }
-                    }
+					for (let i = 0; i < weights.length; i++) {
+						cumulativeSum += weights[i];
+						if (cumulativeSum >= threshold) {
+							return i;
+						}
+					}
 
-                    return weights.length - 1; // Fallback in case of rounding errors
-                }
+					return weights.length - 1; // Fallback in case of rounding errors
+				}
 
-                const idx = weightedRandomChoice(probsArray);
-                resolve(JSON.parse(dataStrs[idx]));
-            }
-        } catch (err) {
-            reject(err);
-        }
-    }).finally(() => {
-        db.close();
-    });
+				const idx = weightedRandomChoice(probsArray);
+				resolve(JSON.parse(dataStrs[idx]));
+			}
+		} catch (err) {
+			reject(err);
+		}
+	}).finally(() => {
+		db.close();
+	});
 }
 
 interface VendorRenderer {
-    vendor: string;
-    renderer: string;
+	vendor: string;
+	renderer: string;
 }
 
 interface PossiblePairs {
-    [key: string]: Array<VendorRenderer>;
+	[key: string]: Array<VendorRenderer>;
 }
 
 export async function getPossiblePairs(): Promise<PossiblePairs> {
-    const db = new Database(DB_PATH);
-    const result: PossiblePairs = {};
+	const db = new Database(DB_PATH);
+	const result: PossiblePairs = {};
 
-    return new Promise<PossiblePairs>((resolve, reject) => {
-        try {
-            const osTypes = Object.keys(OS_ARCH_MATRIX);
+	return new Promise<PossiblePairs>((resolve, reject) => {
+		try {
+			const osTypes = Object.keys(OS_ARCH_MATRIX);
 
-            osTypes.forEach(os_type => {
-                const rows = db.prepare(
-                    `SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os_type} > 0 ORDER BY ${os_type} DESC`
-                ).all();
+			osTypes.forEach((os_type) => {
+				const rows = db
+					.prepare(
+						`SELECT DISTINCT vendor, renderer FROM webgl_fingerprints WHERE ${os_type} > 0 ORDER BY ${os_type} DESC`,
+					)
+					.all();
 
-                result[os_type] = rows as Array<{ vendor: string, renderer: string }>;
-            });
+				result[os_type] = rows as Array<{ vendor: string; renderer: string }>;
+			});
 
-            resolve(result);
-        } catch (err) {
-            reject(err);
-        }
-    }).finally(() => {
-        db.close();
-    });
+			resolve(result);
+		} catch (err) {
+			reject(err);
+		}
+	}).finally(() => {
+		db.close();
+	});
 }
