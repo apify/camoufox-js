@@ -1935,11 +1935,11 @@ __metadata:
   linkType: hard
 
 "playwright-core@npm:^1.53.1":
-  version: 1.56.0
-  resolution: "playwright-core@npm:1.56.0"
+  version: 1.56.1
+  resolution: "playwright-core@npm:1.56.1"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/2ebf6138feb49722edd6d2df4afceb509309ebb3aadc24dcba2023a4d89c7a1d248c0b03b9e8fa9e31d51a8f72e909a271b98c9e48a82b94ce3ef1314d17a743
+  checksum: 10c0/ffd40142b99c68678b387445d5b42f1fee4ab0b65d983058c37f342e5629f9cdbdac0506ea80a0dfd41a8f9f13345bad54e9a8c35826ef66dc765f4eb3db8da7
   languageName: node
   linkType: hard
 
