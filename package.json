@@ -42,7 +42,7 @@
 		"xml2js": "^0.6.2"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.7",
+		"@biomejs/biome": "2.3.0",
 		"@types/adm-zip": "^0.5.7",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/language-tags": "^1.0.4",
