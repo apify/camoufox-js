@@ -46,7 +46,7 @@
 		"@types/adm-zip": "^0.5.7",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/language-tags": "^1.0.4",
-		"@types/node": "^22.13.2",
+		"@types/node": "^24.0.0",
 		"@types/progress": "^2.0.7",
 		"@types/xml2js": "^0.4.14",
 		"playwright-core": "^1.53.1",
