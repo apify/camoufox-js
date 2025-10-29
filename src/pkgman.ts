@@ -395,6 +395,37 @@ export function launchPath(): string {
 	return launchPath;
 }
 
+interface Progress {
+	tick: (chunkLength: number, token: string) => void;
+}
+
+function toMegabytes(bytes: number) {
+	const mb = bytes / 1024 / 1024;
+	return `${Math.round(mb * 10) / 10} MiB`;
+}
+
+class BasicProgressBar {
+	public totalRows = 10;
+	public stepWidth = 8;
+	public lastRow = -1;
+	public totalDownloadedBytes = 0;
+
+	constructor(public totalBytes: number) { }
+
+	tick(downloadedBytes: number, tokens: string): void {
+		this.totalDownloadedBytes += downloadedBytes;
+		const percentage = this.totalDownloadedBytes / this.totalBytes;
+		const row = Math.floor(this.totalRows * percentage);
+		if (row > this.lastRow) {
+			this.lastRow = row;
+			const percentageString = String(percentage * 100 | 0).padStart(3);
+			// eslint-disable-next-line no-console
+			console.log(`|${tokens.repeat(row * this.stepWidth)}${' '.repeat((this.totalRows - row) * this.stepWidth)}| ${percentageString}% of ${toMegabytes(this.totalBytes)}`);
+		}
+	};
+}
+
+
 export async function webdl(
 	url: string,
 	desc: string = "",
@@ -421,12 +452,19 @@ export async function webdl(
 	}
 
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
-	const progressBar = bar
-		? new ProgressBar(`${desc} [:bar] :percent :etas`, {
+	let progressBar: Progress | null = null;
+	let tokens = "X";
+	if (bar) {
+		if (process.stdout.isTTY) {
+			progressBar = new ProgressBar(`${desc} [:bar] :percent :etas`, {
 				total: totalSize,
 				width: 40,
-			})
-		: null;
+			});
+		} else {
+			progressBar = new BasicProgressBar(totalSize);
+			tokens = '■';
+		}
+	}
 
 	const chunks: Uint8Array[] = [];
 	for await (const chunk of response.body!) {
@@ -436,7 +474,7 @@ export async function webdl(
 			chunks.push(chunk);
 		}
 		if (progressBar) {
-			progressBar.tick(chunk.length, "X");
+			progressBar.tick(chunk.length, tokens);
 		}
 	}
 
