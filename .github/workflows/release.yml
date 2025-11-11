@@ -19,16 +19,22 @@ on:
                 type: string
                 default: ''
 
+permissions:
+    id-token: write # Required for OIDC
+    contents: write # Required to push updates
+
 jobs:
     build_and_test:
         name: Build and test
         uses: ./.github/workflows/test.yml
         secrets: inherit
 
-    release:
-        name: Release
+    bump_version:
+        name: Bump version
         needs: [build_and_test]
         runs-on: ubuntu-latest
+        outputs:
+            new_version_commit_sha: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
 
         steps:
             -   name: Checkout repository
@@ -37,31 +43,31 @@ jobs:
                     token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                     fetch-depth: 0
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: '24'
-                  package-manager-cache: false
+            -   name: Set up Node.js
+                uses: actions/setup-node@v6
+                with:
+                    node-version: '24'
+                    package-manager-cache: false
 
-            - name: Enable corepack
-              run: corepack enable
+            -   name: Enable corepack
+                run: |
+                    corepack enable
+                    corepack prepare yarn@stable --activate
 
-            - name: Install dependencies
-              run: yarn
+            -   name: Activate cache for Node.js 24
+                uses: actions/setup-node@v6
+                with:
+                    cache: 'yarn'
 
-            - name: Run TypeScript build
-              run: yarn build
+            -   name: Install dependencies
+                run: yarn --immutable
 
-            - name: Setup git user and npm
-              run: |
-                 git config --global user.name "Apify Release Bot"
-                 git config --global user.email "noreply@apify.com"
-                 echo "access=public" > .npmrc
-                 echo "//registry.npmjs.org/:_authToken=${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}" >> .npmrc
+            -   name: Run TypeScript build
+                run: yarn build
 
             -   name: Bump version to custom version
                 if: ${{ github.event.inputs.version == 'custom' && github.event.inputs.custom_version != '' }}
-                run: npm version --no-git-tag ${{ github.event.inputs.custom_version }}
+                run: yarn version ${{ github.event.inputs.custom_version }}
                 env:
                     NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
@@ -69,22 +75,19 @@ jobs:
 
             -   name: Bump version to ${{ github.event.inputs.version }} version
                 if: ${{ github.event.inputs.version != 'custom' }}
-                run: npm version --no-git-tag ${{ github.event.inputs.version }}
+                run: yarn version ${{ github.event.inputs.version }}
                 env:
                     NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            -   name: Pin versions in internal dependencies and update lockfile
-                run: |
-                    yarn install --no-immutable
-                    git add .
-                    git diff-index --quiet HEAD || git commit -m 'chore(release): update internal dependencies [skip ci]'
-                    git push
+            -   name: Commit changes
+                id: commit
+                uses: EndBug/add-and-commit@v9
+                with:
+                    author_name: Apify Release Bot
+                    author_email: noreply@apify.com
+                    message: 'chore(release): Update package version [skip ci]'
 
-            -   name: Publish packages
-                run: npm publish --yes --no-verify-access
-                env:
-                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
-                    GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
-                    GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+            -   name: Publish to npm
+                run: npm publish
