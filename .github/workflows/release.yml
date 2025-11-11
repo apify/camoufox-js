@@ -48,6 +48,7 @@ jobs:
                 with:
                     node-version: '24'
                     package-manager-cache: false
+                    registry-url: 'https://registry.npmjs.org'
 
             -   name: Enable corepack
                 run: |
@@ -69,7 +70,6 @@ jobs:
                 if: ${{ github.event.inputs.version == 'custom' && github.event.inputs.custom_version != '' }}
                 run: yarn version ${{ github.event.inputs.custom_version }}
                 env:
-                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
@@ -77,7 +77,6 @@ jobs:
                 if: ${{ github.event.inputs.version != 'custom' }}
                 run: yarn version ${{ github.event.inputs.version }}
                 env:
-                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
@@ -90,4 +89,4 @@ jobs:
                     message: 'chore(release): Update package version [skip ci]'
 
             -   name: Publish to npm
-                run: npm publish
+                run: npm publish --provenance
