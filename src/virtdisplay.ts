@@ -109,7 +109,13 @@ export class VirtualDisplay {
 		const tmpd = process.env.TMPDIR || tmpdir();
 		try {
 			return globSync(path.join(tmpd, ".X*-lock")).filter(
-				(p) => existsSync(p) && statSync(p).isFile(),
+				(p) => {
+					try {
+						return statSync(p).isFile();
+					} catch {
+						return false;
+					}
+				},
 			);
 		} catch {
 			return [];
