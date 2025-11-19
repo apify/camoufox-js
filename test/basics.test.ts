@@ -24,7 +24,28 @@ describe("virtual display", () => {
 		expect(userAgent).toMatch(/Linux/i);
 		await browser.close();
 	}, 10e3);
+
+	test("multiple browsers spawn own virtual displays", async () => {
+		const browser1 = await Camoufox({
+			os: "linux",
+			headless: "virtual",
+		} as any);
+
+		const browser2 = await Camoufox({
+			os: "linux",
+			headless: "virtual",
+		} as any);
+
+		expect(browser1).not.toBe(browser2);
+
+		await browser1.close();
+
+		const page = await browser2.newPage();
+		await page.goto("https://api.apify.com/v2/browser-info");
+		await browser2.close();
+	}, 10e3);
 });
+
 
 describe("Fingerprint consistency", () => {
 	test.each(TEST_CASES)("User-Agent matches set OS ($os)", async ({
