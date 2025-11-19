@@ -1,7 +1,7 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 // import { globSync } from 'glob';
 import { randomInt } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import {
 	CannotExecuteXvfb,
@@ -9,6 +9,8 @@ import {
 	VirtualDisplayNotSupported,
 } from "./exceptions.js";
 import { OS_NAME } from "./pkgman.js";
+import path from "node:path";
+import { globSync } from "glob";
 // import { Lock } from 'async-mutex';
 
 export class VirtualDisplay {
@@ -101,11 +103,15 @@ export class VirtualDisplay {
 		// });
 	}
 
+	/**
+	 * Get list of lock files in /tmp
+	 * @returns List of lock file paths
+	 */
 	public static _get_lock_files(): string[] {
-		const _tmpd = process.env.TMPDIR || tmpdir();
+		const tmpd = process.env.TMPDIR || tmpdir();
 		try {
-			return [];
-			// return globSync(join(tmpd, ".X*-lock")).filter(p => existsSync(p));
+			return globSync(path.join(tmpd, ".X*-lock"))
+				.filter(p => existsSync(p) && statSync(p).isFile());
 		} catch {
 			return [];
 		}
