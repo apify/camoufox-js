@@ -847,7 +847,6 @@ __metadata:
     better-sqlite3: "npm:^12.2.0"
     commander: "npm:^14.0.0"
     fingerprint-generator: "npm:^2.1.66"
-    glob: "npm:^12.0.0"
     impit: "npm:^0.7.0"
     language-tags: "npm:^2.0.1"
     maxmind: "npm:^5.0.0"
@@ -1316,22 +1315,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^12.0.0":
-  version: 12.0.0
-  resolution: "glob@npm:12.0.0"
-  dependencies:
-    foreground-child: "npm:^3.3.1"
-    jackspeak: "npm:^4.1.1"
-    minimatch: "npm:^10.1.1"
-    minipass: "npm:^7.1.2"
-    package-json-from-dist: "npm:^1.0.0"
-    path-scurry: "npm:^2.0.0"
-  bin:
-    glob: dist/esm/bin.mjs
-  checksum: 10c0/923fbb7e30913496dc1c30191edb7ebb610a26edac81710a5f697c718b08694bce7fb0245baceba5383472778a8431ff7c36571703507cc6563602d3c139c993
-  languageName: node
-  linkType: hard
-
 "graceful-fs@npm:^4.2.6":
   version: 4.2.11
   resolution: "graceful-fs@npm:4.2.11"
@@ -1660,7 +1643,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^10.0.3, minimatch@npm:^10.1.1":
+"minimatch@npm:^10.0.3":
   version: 10.1.1
   resolution: "minimatch@npm:10.1.1"
   dependencies:
