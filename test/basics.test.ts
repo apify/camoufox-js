@@ -27,37 +27,36 @@ describe("virtual display", () => {
 });
 
 describe("Fingerprint consistency", () => {
-	test.each(TEST_CASES)(
-		"User-Agent matches set OS ($os)",
-		async ({ os, userAgentRegex }) => {
-			const browser = await Camoufox({
-				os,
-				headless: true,
-			} as any);
+	test.each(TEST_CASES)("User-Agent matches set OS ($os)", async ({
+		os,
+		userAgentRegex,
+	}) => {
+		const browser = await Camoufox({
+			os,
+			headless: true,
+		} as any);
 
-			const page = await browser.newPage();
+		const page = await browser.newPage();
 
-			await page.goto("https://api.apify.com/v2/browser-info");
+		await page.goto("https://api.apify.com/v2/browser-info");
 
-			const data = await page.evaluate(() =>
-				JSON.parse(document.querySelector("pre")?.textContent ?? ""),
-			);
-			const httpAgent = data.headers["user-agent"];
-			const jsAgent = await page.evaluate(() => navigator.userAgent.toString());
+		const data = await page.evaluate(() =>
+			JSON.parse(document.querySelector("pre")?.textContent ?? ""),
+		);
+		const httpAgent = data.headers["user-agent"];
+		const jsAgent = await page.evaluate(() => navigator.userAgent.toString());
 
-			expect(httpAgent).toEqual(jsAgent);
-			expect(httpAgent).toMatch(userAgentRegex);
+		expect(httpAgent).toEqual(jsAgent);
+		expect(httpAgent).toMatch(userAgentRegex);
 
-			TEST_CASES.forEach(({ os: testOs, userAgentRegex }) => {
-				if (testOs !== os) {
-					expect(httpAgent).not.toMatch(userAgentRegex);
-				}
-			});
+		TEST_CASES.forEach(({ os: testOs, userAgentRegex }) => {
+			if (testOs !== os) {
+				expect(httpAgent).not.toMatch(userAgentRegex);
+			}
+		});
 
-			await browser.close();
-		},
-		10e3,
-	);
+		await browser.close();
+	}, 10e3);
 });
 
 test("Playwright connects to Camoufox server", async () => {
