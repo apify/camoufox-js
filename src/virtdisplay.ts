@@ -1,17 +1,15 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
-// import { globSync } from 'glob';
 import { randomInt } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
+import path from "node:path";
+import { globSync } from "glob";
 import {
 	CannotExecuteXvfb,
 	CannotFindXvfb,
 	VirtualDisplayNotSupported,
 } from "./exceptions.js";
 import { OS_NAME } from "./pkgman.js";
-import path from "node:path";
-import { globSync } from "glob";
-// import { Lock } from 'async-mutex';
 
 export class VirtualDisplay {
 	private debug: boolean;
