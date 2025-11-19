@@ -46,7 +46,6 @@ describe("virtual display", () => {
 	}, 10e3);
 });
 
-
 describe("Fingerprint consistency", () => {
 	test.each(TEST_CASES)("User-Agent matches set OS ($os)", async ({
 		os,

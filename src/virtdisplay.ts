@@ -110,8 +110,9 @@ export class VirtualDisplay {
 	public static _get_lock_files(): string[] {
 		const tmpd = process.env.TMPDIR || tmpdir();
 		try {
-			return globSync(path.join(tmpd, ".X*-lock"))
-				.filter(p => existsSync(p) && statSync(p).isFile());
+			return globSync(path.join(tmpd, ".X*-lock")).filter(
+				(p) => existsSync(p) && statSync(p).isFile(),
+			);
 		} catch {
 			return [];
 		}
