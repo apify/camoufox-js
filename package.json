@@ -1,6 +1,6 @@
 {
 	"name": "camoufox-js",
-	"version": "0.8.2",
+	"version": "0.8.3",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
