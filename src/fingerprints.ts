@@ -39,7 +39,10 @@ function _castToProperties(
 			data = 0;
 		}
 		if (ffVersion && typeof data === "string") {
-			data = data.replace(/(?<!\d)(1[0-9]{2})(\.0)(?!\d)/, `${ffVersion}$2`);
+			data = data.replaceAll(
+				/(?<!\d)(1[0-9]{2})(\.0)(?!\d)/gi,
+				`${ffVersion}$2`,
+			);
 		}
 		camoufoxData[typeKey] = data;
 	}
