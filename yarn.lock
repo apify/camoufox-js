@@ -2448,15 +2448,15 @@ __metadata:
   linkType: hard
 
 "ua-parser-js@npm:^2.0.2":
-  version: 2.0.6
-  resolution: "ua-parser-js@npm:2.0.6"
+  version: 2.0.7
+  resolution: "ua-parser-js@npm:2.0.7"
   dependencies:
     detect-europe-js: "npm:^0.1.2"
     is-standalone-pwa: "npm:^0.1.1"
     ua-is-frozen: "npm:^0.1.2"
   bin:
     ua-parser-js: script/cli.js
-  checksum: 10c0/b57b3bd81a3d6b5f76df9c91090bcd5b778a2479dfc0eb4720eced724a55395691a4816a0cc899e0bf60fa2ab6472d045622e368b2cb697cdb431930e12a9c92
+  checksum: 10c0/2fd8ea4dd8085a151452cf21cf7efd3f5b0e86f33fb3c84b6956fa9c326a77978a04b1a9393ad452c36abd1896f8a508802c2628e8eb823451be1c20a6d98f15
   languageName: node
   linkType: hard
 
