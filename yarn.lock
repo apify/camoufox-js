@@ -1611,12 +1611,12 @@ __metadata:
   linkType: hard
 
 "maxmind@npm:^5.0.0":
-  version: 5.0.1
-  resolution: "maxmind@npm:5.0.1"
+  version: 5.0.3
+  resolution: "maxmind@npm:5.0.3"
   dependencies:
     mmdb-lib: "npm:3.0.1"
     tiny-lru: "npm:11.4.5"
-  checksum: 10c0/c12f3341504e899051280aeb96cc3e1747a92df272879e61537a69fba2fb8d6e5d6bbc35428b7a32eddd2c4300f38c57bc80a7bf891bbb7a9c4d3658977a73c0
+  checksum: 10c0/a85a371e1fc9b2b08bb7f05eb8b1f76e856521080c1009d9afaf6aa7f83c2b2ba4b23cbfdf89c397f0a03e9fbfb1c57c0ece078a6bf7d8cf748cbc2a17a1b66c
   languageName: node
   linkType: hard
 
