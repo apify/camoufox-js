@@ -1,6 +1,21 @@
 import path from "node:path";
-import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
 import { OS_ARCH_MATRIX } from "../pkgman.js";
+
+// Runtime detection: use bun:sqlite in Bun, better-sqlite3 in Node.js
+// This enables camoufox-js to work in both runtimes
+let Database: typeof DatabaseType;
+if (typeof Bun !== "undefined") {
+	// Running in Bun - use built-in sqlite
+	// biome-ignore lint/style/noVar: dynamic import requires var for hoisting
+	var { Database: BunDatabase } = await import("bun:sqlite");
+	Database = BunDatabase as unknown as typeof DatabaseType;
+} else {
+	// Running in Node.js - use better-sqlite3
+	// biome-ignore lint/style/noVar: dynamic import requires var for hoisting
+	var { default: NodeDatabase } = await import("better-sqlite3");
+	Database = NodeDatabase;
+}
 
 // Get database path relative to this file
 const DB_PATH = path.join(
