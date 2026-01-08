@@ -1,6 +1,32 @@
 import path from "node:path";
-import Database from "better-sqlite3";
+import type BetterSqlite3 from "better-sqlite3";
 import { OS_ARCH_MATRIX } from "../pkgman.js";
+
+// Declare Bun global for runtime detection (only exists when running in Bun)
+declare const Bun: unknown;
+
+// Cached Database constructor - loaded lazily on first use
+let DatabaseConstructor: typeof BetterSqlite3 | null = null;
+
+/**
+ * Opens a SQLite database using the appropriate driver for the runtime.
+ * Uses bun:sqlite in Bun, better-sqlite3 in Node.js.
+ * The Database constructor is cached after first load.
+ */
+async function openDatabase(pathName: string): Promise<BetterSqlite3.Database> {
+	if (!DatabaseConstructor) {
+		if (typeof Bun !== "undefined") {
+			// @ts-ignore - bun:sqlite only exists in Bun runtime
+			const { Database: BunDatabase } = await import("bun:sqlite");
+			DatabaseConstructor = BunDatabase;
+		} else {
+			const { default: NodeDatabase } = await import("better-sqlite3");
+			DatabaseConstructor = NodeDatabase;
+		}
+	}
+	// DatabaseConstructor is guaranteed to be set at this point
+	return new DatabaseConstructor!(pathName);
+}
 
 // Get database path relative to this file
 const DB_PATH = path.join(
@@ -29,7 +55,7 @@ export async function sampleWebGL(
 		throw new Error(`Invalid OS: ${os}. Must be one of: win, mac, lin`);
 	}
 
-	const db = new Database(DB_PATH);
+	const db = await openDatabase(DB_PATH);
 	let query = "";
 	let params: any[] = [];
 
@@ -107,7 +133,7 @@ interface PossiblePairs {
 }
 
 export async function getPossiblePairs(): Promise<PossiblePairs> {
-	const db = new Database(DB_PATH);
+	const db = await openDatabase(DB_PATH);
 	const result: PossiblePairs = {};
 
 	return new Promise<PossiblePairs>((resolve, reject) => {
