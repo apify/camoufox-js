@@ -1,26 +1,31 @@
 import path from "node:path";
-import type { Database as BetterSqlite3Database } from "better-sqlite3";
+import type Database from "better-sqlite3";
 import { OS_ARCH_MATRIX } from "../pkgman.js";
 
+// Declare Bun global for runtime detection (only exists when running in Bun)
+declare const Bun: unknown;
+
 // Cached Database constructor - loaded lazily on first use
-let Database: typeof BetterSqlite3Database | null = null;
+// Using `any` to support both better-sqlite3 and bun:sqlite constructors
+let DatabaseConstructor: (new (filename: string) => Database) | null = null;
 
 /**
  * Opens a SQLite database using the appropriate driver for the runtime.
  * Uses bun:sqlite in Bun, better-sqlite3 in Node.js.
  * The Database constructor is cached after first load.
  */
-async function openDatabase(pathName: string): Promise<BetterSqlite3Database> {
-	if (!Database) {
+async function openDatabase(pathName: string): Promise<Database> {
+	if (!DatabaseConstructor) {
 		if (typeof Bun !== "undefined") {
+			// @ts-ignore - bun:sqlite only exists in Bun runtime
 			const { Database: BunDatabase } = await import("bun:sqlite");
-			Database = BunDatabase as unknown as typeof BetterSqlite3Database;
+			DatabaseConstructor = BunDatabase;
 		} else {
 			const { default: NodeDatabase } = await import("better-sqlite3");
-			Database = NodeDatabase;
+			DatabaseConstructor = NodeDatabase;
 		}
 	}
-	return new Database(pathName);
+	return new DatabaseConstructor(pathName) as Database;
 }
 
 // Get database path relative to this file
