@@ -35,7 +35,7 @@
 		"commander": "^14.0.0",
 		"fingerprint-generator": "^2.1.66",
 		"glob": "^13.0.0",
-		"impit": "^0.7.0",
+		"impit": "^0.8.0",
 		"language-tags": "^2.0.1",
 		"maxmind": "^5.0.0",
 		"progress": "^2.0.3",
