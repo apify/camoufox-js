@@ -5,6 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
 import ProgressBar from "progress";
 import { CONSTRAINTS } from "./__version__.js";
@@ -36,11 +37,11 @@ if (!(process.platform in OS_MAP)) {
 
 export const OS_NAME: "mac" | "win" | "lin" = OS_MAP[process.platform];
 
+const currentDir =
+	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
+
 export const INSTALL_DIR: PathLike = userCacheDir("camoufox");
-export const LOCAL_DATA: PathLike = path.join(
-	import.meta.dirname,
-	"data-files",
-);
+export const LOCAL_DATA: PathLike = path.join(currentDir, "data-files");
 
 export const OS_ARCH_MATRIX: { [key: string]: string[] } = {
 	win: ["x86_64", "i686"],

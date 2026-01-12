@@ -1,4 +1,9 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import WARNINGS_DATA from "./mappings/warnings.config.js";
+
+const currentDir =
+	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
 export class LeakWarning extends Error {
 	constructor(message: string) {
@@ -15,7 +20,7 @@ export class LeakWarning extends Error {
 			warning += "\nIf this is intentional, pass `iKnowWhatImDoing=true`.";
 		}
 
-		const currentModule = import.meta.dirname;
+		const currentModule = currentDir;
 		const originalStackTrace = Error.prepareStackTrace;
 		Error.prepareStackTrace = (_, stack) => stack;
 		const err = new Error();
