@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import tags from "language-tags";
 import maxmind, { type CityResponse } from "maxmind";
 import xml2js from "xml2js";
@@ -15,6 +16,9 @@ import { validateIP } from "./ip.js";
 import { GitHubDownloader, INSTALL_DIR, webdl } from "./pkgman.js";
 import { getAsBooleanFromENV } from "./utils.js";
 import { LeakWarning } from "./warnings.js";
+
+const currentDir =
+	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
 export const ALLOW_GEOIP = true;
 
@@ -239,7 +243,7 @@ export async function getGeolocation(ip: string): Promise<Geolocation> {
 
 async function getUnicodeInfo(): Promise<any> {
 	const data = await fs.promises.readFile(
-		path.join(import.meta.dirname, "data-files", "territoryInfo.xml"),
+		path.join(currentDir, "data-files", "territoryInfo.xml"),
 	);
 	const parser = new xml2js.Parser();
 	return parser.parseStringPromise(data);

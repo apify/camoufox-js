@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type BetterSqlite3 from "better-sqlite3";
 import { OS_ARCH_MATRIX } from "../pkgman.js";
 
@@ -29,12 +30,9 @@ async function openDatabase(pathName: string): Promise<BetterSqlite3.Database> {
 }
 
 // Get database path relative to this file
-const DB_PATH = path.join(
-	import.meta.dirname,
-	"..",
-	"data-files",
-	"webgl_data.db",
-);
+const currentDir =
+	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH = path.join(currentDir, "..", "data-files", "webgl_data.db");
 
 interface WebGLData {
 	vendor: string;
