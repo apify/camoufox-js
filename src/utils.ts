@@ -575,7 +575,7 @@ export async function launchOptions({
 	}
 
 	// Add the default addons
-	addDefaultAddons(addons, exclude_addons);
+	await addDefaultAddons(addons, exclude_addons);
 
 	// Confirm all addon paths are valid
 	if (addons.length > 0) {
