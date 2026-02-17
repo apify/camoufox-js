@@ -420,8 +420,9 @@ export interface LaunchOptions {
 	ff_version?: number;
 
 	/** Whether to run the browser in headless mode. Defaults to `false`.
+	 * Can be `true`, `false`, or `"virtual"` to use a virtual display.
 	 */
-	headless?: boolean;
+	headless?: boolean | "virtual";
 
 	/** Whether to enable running scripts in the main world.
 	 * To use this, prepend "mw:" to the script: `page.evaluate("mw:" + script)`.
@@ -531,8 +532,14 @@ export async function launchOptions({
 	}
 
 	// Set default values for optional arguments
+	// Normalize headless to boolean (virtual display is handled separately in NewBrowser)
+	let headlessBoolean: boolean;
 	if (headless === undefined) {
-		headless = false;
+		headlessBoolean = false;
+	} else if (headless === "virtual") {
+		headlessBoolean = false;
+	} else {
+		headlessBoolean = headless;
 	}
 	if (!addons) {
 		addons = [];
@@ -595,7 +602,7 @@ export async function launchOptions({
 	// Generate a fingerprint
 	if (!fingerprint) {
 		fingerprint = generateFingerprint(window, {
-			screen: screen || getScreenCons(headless || "DISPLAY" in env),
+			screen: screen || getScreenCons(headlessBoolean || "DISPLAY" in env),
 			operatingSystems,
 		});
 	} else {
@@ -775,7 +782,7 @@ export async function launchOptions({
 					bypass: typeof proxy === "string" ? undefined : proxy?.bypass,
 				}
 			: undefined,
-		headless: headless,
+		headless: headlessBoolean,
 		...launch_options,
 	};
 

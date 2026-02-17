@@ -12,9 +12,7 @@ export async function Camoufox<
 	UserDataDir extends string | undefined = undefined,
 	ReturnType = UserDataDir extends string ? BrowserContext : Browser,
 >(
-	launch_options:
-		| LaunchOptions
-		| { headless?: boolean | "virtual"; user_data_dir: UserDataDir } = {},
+	launch_options: LaunchOptions & { user_data_dir?: UserDataDir } = {},
 ): Promise<ReturnType> {
 	const { headless, user_data_dir, ...launchOptions } = launch_options;
 	return NewBrowser(
