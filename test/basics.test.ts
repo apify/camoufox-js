@@ -16,7 +16,7 @@ describe("virtual display", () => {
 		const browser = await Camoufox({
 			os: "linux",
 			headless: "virtual",
-		} as any);
+		});
 
 		const page = await browser.newPage();
 		await page.goto("https://api.apify.com/v2/browser-info");
@@ -29,12 +29,12 @@ describe("virtual display", () => {
 		const browser1 = await Camoufox({
 			os: "linux",
 			headless: "virtual",
-		} as any);
+		});
 
 		const browser2 = await Camoufox({
 			os: "linux",
 			headless: "virtual",
-		} as any);
+		});
 
 		expect(browser1).not.toBe(browser2);
 
@@ -43,6 +43,24 @@ describe("virtual display", () => {
 		const page = await browser2.newPage();
 		await page.goto("https://api.apify.com/v2/browser-info");
 		await browser2.close();
+	}, 10e3);
+
+	test("should support combining headless virtual with other launch options", async () => {
+		// This test validates the fix for the type signature issue
+		// Previously, TypeScript would error when combining headless: "virtual" with other options
+		const browser = await Camoufox({
+			os: "linux",
+			headless: "virtual",
+			// These options were not accessible with the old type signature
+			block_images: true,
+			humanize: true,
+		});
+
+		const page = await browser.newPage();
+		await page.goto("https://api.apify.com/v2/browser-info");
+		const userAgent = await page.evaluate(() => navigator.userAgent.toString());
+		expect(userAgent).toMatch(/Linux/i);
+		await browser.close();
 	}, 10e3);
 });
 
@@ -54,7 +72,7 @@ describe("Fingerprint consistency", () => {
 		const browser = await Camoufox({
 			os,
 			headless: true,
-		} as any);
+		});
 
 		const page = await browser.newPage();
 

@@ -420,8 +420,9 @@ export interface LaunchOptions {
 	ff_version?: number;
 
 	/** Whether to run the browser in headless mode. Defaults to `false`.
+	 * Can be `true`, `false`, or `"virtual"` to use a virtual display.
 	 */
-	headless?: boolean;
+	headless?: boolean | "virtual";
 
 	/** Whether to enable running scripts in the main world.
 	 * To use this, prepend "mw:" to the script: `page.evaluate("mw:" + script)`.
@@ -493,6 +494,13 @@ function getProxyUrl(
 	return url;
 }
 
+/**
+ * Prepare launch options for Playwright's Firefox browser.
+ *
+ * Note: This function only accepts `boolean` for the `headless` parameter.
+ * Callers must normalize `"virtual"` to `boolean` before calling this function.
+ * The virtual display setup is handled separately in the calling function.
+ */
 export async function launchOptions({
 	config,
 	os,
@@ -524,16 +532,16 @@ export async function launchOptions({
 	debug,
 	virtual_display,
 	...launch_options
-}: LaunchOptions): Promise<Record<string, any>> {
+}: Omit<LaunchOptions, "headless"> & {
+	headless?: boolean;
+}): Promise<Record<string, any>> {
 	// Build the config
 	if (!config) {
 		config = {};
 	}
 
 	// Set default values for optional arguments
-	if (headless === undefined) {
-		headless = false;
-	}
+	const headlessBoolean = headless ?? false;
 	if (!addons) {
 		addons = [];
 	}
@@ -595,7 +603,7 @@ export async function launchOptions({
 	// Generate a fingerprint
 	if (!fingerprint) {
 		fingerprint = generateFingerprint(window, {
-			screen: screen || getScreenCons(headless || "DISPLAY" in env),
+			screen: screen || getScreenCons(headlessBoolean || "DISPLAY" in env),
 			operatingSystems,
 		});
 	} else {
@@ -775,7 +783,7 @@ export async function launchOptions({
 					bypass: typeof proxy === "string" ? undefined : proxy?.bypass,
 				}
 			: undefined,
-		headless: headless,
+		headless: headlessBoolean,
 		...launch_options,
 	};
 

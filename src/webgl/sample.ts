@@ -17,7 +17,7 @@ let DatabaseConstructor: typeof BetterSqlite3 | null = null;
 async function openDatabase(pathName: string): Promise<BetterSqlite3.Database> {
 	if (!DatabaseConstructor) {
 		if (typeof Bun !== "undefined") {
-			// @ts-ignore - bun:sqlite only exists in Bun runtime
+			// @ts-expect-error - bun:sqlite only exists in Bun runtime
 			const { Database: BunDatabase } = await import("bun:sqlite");
 			DatabaseConstructor = BunDatabase;
 		} else {
