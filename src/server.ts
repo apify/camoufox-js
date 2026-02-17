@@ -8,8 +8,13 @@ export async function launchServer({
 }:
 	| LaunchOptions
 	| { port?: number; ws_path?: string }): Promise<BrowserServer> {
+	// Extract and normalize headless (virtual is treated as true for server mode)
+	const { headless, ...restOptions } = options as LaunchOptions;
+	const normalizedHeadless: boolean | undefined =
+		headless === "virtual" ? true : headless;
+
 	return firefox.launchServer({
-		...(await launchOptions(options)),
+		...(await launchOptions({ ...restOptions, headless: normalizedHeadless })),
 		port,
 		wsPath: ws_path,
 	});

@@ -38,16 +38,21 @@ export async function NewBrowser<
 ): Promise<ReturnType> {
 	let virtualDisplay: VirtualDisplay | null = null;
 
+	// Normalize headless to boolean and prepare options for launchOptions function
+	const normalizedHeadless: boolean =
+		headless === "virtual" ? false : headless || false;
+
 	if (headless === "virtual") {
 		virtualDisplay = new VirtualDisplay(debug);
 		launch_options.virtual_display = virtualDisplay.get();
-		launch_options.headless = false;
-	} else {
-		launch_options.headless ||= headless;
 	}
 
 	if (!fromOptions || Object.keys(fromOptions).length === 0) {
-		fromOptions = await launchOptions({ debug, ...launch_options });
+		fromOptions = await launchOptions({
+			debug,
+			...launch_options,
+			headless: normalizedHeadless,
+		});
 	}
 
 	if (typeof userDataDir === "string") {

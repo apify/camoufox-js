@@ -525,15 +525,16 @@ export async function launchOptions({
 	debug,
 	virtual_display,
 	...launch_options
-}: LaunchOptions): Promise<Record<string, any>> {
+}: Omit<LaunchOptions, "headless"> & {
+	headless?: boolean;
+}): Promise<Record<string, any>> {
 	// Build the config
 	if (!config) {
 		config = {};
 	}
 
 	// Set default values for optional arguments
-	// Normalize headless to boolean (virtual display is handled separately in NewBrowser)
-	const headlessBoolean = headless === "virtual" ? false : (headless ?? false);
+	const headlessBoolean = headless ?? false;
 	if (!addons) {
 		addons = [];
 	}
