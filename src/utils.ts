@@ -494,6 +494,13 @@ function getProxyUrl(
 	return url;
 }
 
+/**
+ * Prepare launch options for Playwright's Firefox browser.
+ * 
+ * Note: This function only accepts `boolean` for the `headless` parameter.
+ * Callers must normalize `"virtual"` to `boolean` before calling this function.
+ * The virtual display setup is handled separately in the calling function.
+ */
 export async function launchOptions({
 	config,
 	os,
