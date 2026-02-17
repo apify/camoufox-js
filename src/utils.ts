@@ -533,14 +533,8 @@ export async function launchOptions({
 
 	// Set default values for optional arguments
 	// Normalize headless to boolean (virtual display is handled separately in NewBrowser)
-	let headlessBoolean: boolean;
-	if (headless === undefined) {
-		headlessBoolean = false;
-	} else if (headless === "virtual") {
-		headlessBoolean = false;
-	} else {
-		headlessBoolean = headless;
-	}
+	const headlessBoolean =
+		headless === "virtual" ? false : headless ?? false;
 	if (!addons) {
 		addons = [];
 	}
