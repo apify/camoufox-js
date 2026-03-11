@@ -1,6 +1,6 @@
-import { type ChildProcess, execFileSync, spawn } from "node:child_process";
+import { type ChildProcess, execSync, spawn } from "node:child_process";
 import { randomInt } from "node:crypto";
-import { existsSync, statSync } from "node:fs";
+import { accessSync, constants, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { globSync } from "glob";
@@ -50,16 +50,23 @@ export class VirtualDisplay {
 	}
 
 	private get xvfb_path(): string {
-		const path = execFileSync("which", ["Xvfb"]).toString().trim();
-		if (!path) {
+		let xvfbPath: string;
+		try {
+			xvfbPath = execSync("which Xvfb").toString().trim();
+		} catch {
 			throw new CannotFindXvfb("Please install Xvfb to use headless mode.");
 		}
-		if (!existsSync(path) || !execFileSync("test", ["-x", path])) {
+		if (!xvfbPath) {
+			throw new CannotFindXvfb("Please install Xvfb to use headless mode.");
+		}
+		try {
+			accessSync(xvfbPath, constants.X_OK);
+		} catch {
 			throw new CannotExecuteXvfb(
-				`I do not have permission to execute Xvfb: ${path}`,
+				`I do not have permission to execute Xvfb: ${xvfbPath}`,
 			);
 		}
-		return path;
+		return xvfbPath;
 	}
 
 	private get xvfb_cmd(): string[] {
