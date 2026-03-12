@@ -55,14 +55,28 @@ export async function NewBrowser<
 		});
 	}
 
+	// Extract _timezoneId (non-Linux workaround for Camoufox binary timezone crash).
+	// TODO: Remove once the Camoufox binary fixes timezone-spoofing.patch.
+	const timezoneId = fromOptions._timezoneId as string | undefined;
+	delete fromOptions._timezoneId;
+
 	if (typeof userDataDir === "string") {
 		const context = await playwright.launchPersistentContext(
 			userDataDir,
-			fromOptions,
+			{ ...fromOptions, ...(timezoneId ? { timezoneId } : {}) },
 		);
 		return syncAttachVD(context, virtualDisplay);
 	}
 
 	const browser = await playwright.launch(fromOptions);
+
+	// Monkey-patch newContext to inject timezoneId on non-Linux.
+	// TODO: Remove once the Camoufox binary fixes timezone-spoofing.patch.
+	if (timezoneId) {
+		const originalNewContext = browser.newContext.bind(browser);
+		browser.newContext = (options?: any) =>
+			originalNewContext({ timezoneId, ...options });
+	}
+
 	return syncAttachVD(browser, virtualDisplay);
 }
