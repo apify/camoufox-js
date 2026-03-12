@@ -737,11 +737,23 @@ export async function launchOptions({
 		});
 	}
 
-	// Canvas anti-fingerprinting
-	mergeInto(config, {
-		"canvas:aaOffset": Math.floor(Math.random() * 101) - 50, // nosec
-		"canvas:aaCapOffset": true,
-	});
+	// Set canvas and audio seeds (used by CloverLabs builds for per-context spoofing).
+	// Only set if the binary's properties.json supports them.
+	const knownProperties = loadProperties(executable_path);
+	if ("canvas:seed" in knownProperties) {
+		setInto(
+			config,
+			"canvas:seed",
+			Math.floor(Math.random() * 1_073_741_824),
+		);
+	}
+	if ("audio:seed" in knownProperties) {
+		setInto(
+			config,
+			"audio:seed",
+			Math.floor(Math.random() * 1_073_741_824),
+		);
+	}
 
 	// Cache previous pages, requests, etc (uses more memory)
 	if (enable_cache) {
