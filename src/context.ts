@@ -96,6 +96,28 @@ export function setWebRTCIPv6(ip: string): string {
 	return `window.setWebRTCIPv6?.(${JSON.stringify(ip)});`;
 }
 
+/** Generate init script for per-context navigator.userAgent */
+export function setNavigatorUserAgent(ua: string): string {
+	return `window.setNavigatorUserAgent?.(${JSON.stringify(ua)});`;
+}
+
+/** Generate init script for per-context geolocation */
+export function setGeolocation(
+	lat: number,
+	lon: number,
+	accuracy?: number,
+): string {
+	if (accuracy != null) {
+		return `window.setGeolocation?.(${lat}, ${lon}, ${accuracy});`;
+	}
+	return `window.setGeolocation?.(${lat}, ${lon});`;
+}
+
+/** Generate init script for per-context locale */
+export function setLocale(locale: string): string {
+	return `window.setLocale?.(${JSON.stringify(locale)});`;
+}
+
 /**
  * Configuration for per-context fingerprint overrides.
  * All fields are optional - only provided fields will be applied.
@@ -133,6 +155,12 @@ export interface ContextFingerprint {
 	webrtcIPv4?: string;
 	/** WebRTC IPv6 address */
 	webrtcIPv6?: string;
+	/** navigator.userAgent override */
+	userAgent?: string;
+	/** Geolocation override */
+	geolocation?: { latitude: number; longitude: number; accuracy?: number };
+	/** Locale/language override */
+	locale?: string;
 }
 
 /**
@@ -203,6 +231,21 @@ export async function applyContextFingerprint(
 	}
 	if (fingerprint.webrtcIPv6) {
 		scripts.push(setWebRTCIPv6(fingerprint.webrtcIPv6));
+	}
+	if (fingerprint.userAgent) {
+		scripts.push(setNavigatorUserAgent(fingerprint.userAgent));
+	}
+	if (fingerprint.geolocation) {
+		scripts.push(
+			setGeolocation(
+				fingerprint.geolocation.latitude,
+				fingerprint.geolocation.longitude,
+				fingerprint.geolocation.accuracy,
+			),
+		);
+	}
+	if (fingerprint.locale) {
+		scripts.push(setLocale(fingerprint.locale));
 	}
 
 	if (scripts.length > 0) {

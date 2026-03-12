@@ -17,6 +17,9 @@ export {
 	setWebGLVendor,
 	setWebRTCIPv4,
 	setWebRTCIPv6,
+	setNavigatorUserAgent,
+	setGeolocation,
+	setLocale,
 } from "./context.js";
 export { launchServer } from "./server.js";
 export { Camoufox, NewBrowser } from "./sync_api.js";
