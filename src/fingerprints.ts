@@ -81,7 +81,7 @@ export function fromBrowserforge(
 	_castToProperties(
 		camoufoxData,
 		BROWSERFORGE_DATA,
-		{ ...fingerprint },
+		JSON.parse(JSON.stringify(fingerprint)), // Need deep clone here
 		ffVersion,
 	);
 	handleScreenXY(camoufoxData, fingerprint.screen);

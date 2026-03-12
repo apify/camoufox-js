@@ -2,7 +2,7 @@
 // from screeninfo import get_monitors
 // from ua_parser import user_agent_parser
 
-import { type PathLike, readFileSync } from "node:fs";
+import { type PathLike, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type {
 	Fingerprint,
@@ -71,7 +71,22 @@ function getEnvVars(configMap: ConfigMap, userAgentOS: string): EnvVars {
 	}
 
 	if (OS_NAME === "lin") {
-		const fontconfigPath = getPath(path.join("fontconfig", userAgentOS));
+		const directoryMap: Record<string, string> = {
+			lin: "linux",
+			mac: "macos",
+			win: "windows",
+		};
+		const osDir = directoryMap[userAgentOS] ?? userAgentOS;
+		const fontconfigPath = getPath(path.join("fontconfigs", osDir));
+
+		// Validate fonts.conf exists
+		const fontsConf = path.join(fontconfigPath, "fonts.conf");
+		if (!existsSync(fontsConf)) {
+			throw new Error(
+				`fonts.conf not found in ${fontconfigPath}! Something is wrong with your camoufox bundle.`,
+			);
+		}
+
 		envVars.FONTCONFIG_PATH = fontconfigPath;
 	}
 
@@ -240,6 +255,11 @@ function validateOS(
 		return [...os];
 	}
 
+	// Assert that the OS is lowercase
+	if (os !== os.toLowerCase()) {
+		throw new InvalidOS(`OS values must be lowercase: '${os}'`);
+	}
+
 	if (!SUPPORTED_OS.includes(os)) {
 		throw new InvalidOS(`Camoufox does not support the OS: '${os}'`);
 	}
@@ -319,9 +339,12 @@ async function _asyncAttachVD(
 	const originalClose = browser.close;
 
 	browser.close = async (...args: any[]) => {
-		await originalClose.apply(browser, ...args);
-		if (virtualDisplay) {
-			virtualDisplay.kill();
+		try {
+			await originalClose.apply(browser, ...args);
+		} finally {
+			if (virtualDisplay) {
+				virtualDisplay.kill();
+			}
 		}
 	};
 
@@ -345,9 +368,12 @@ export function syncAttachVD(
 	const originalClose = browser.close;
 
 	browser.close = (...args: any[]) => {
-		originalClose.apply(browser, ...args);
-		if (virtualDisplay) {
-			virtualDisplay.kill();
+		try {
+			originalClose.apply(browser, ...args);
+		} finally {
+			if (virtualDisplay) {
+				virtualDisplay.kill();
+			}
 		}
 	};
 
@@ -379,6 +405,11 @@ export interface LaunchOptions {
 	 * Pass the target IP address to use, or `true` to find the IP address automatically.
 	 */
 	geoip?: string | boolean;
+
+	/** Name of the GeoIP database source to use.
+	 * Available: "geolite2" (default), "geoip-aio".
+	 */
+	geoip_db?: string;
 
 	/** Humanize the cursor movement.
 	 * Takes either `true`, or the MAX duration in seconds of the cursor movement.
@@ -510,6 +541,7 @@ export async function launchOptions({
 	disable_coop,
 	webgl_config,
 	geoip,
+	geoip_db,
 	humanize,
 	locale,
 	addons,
@@ -655,8 +687,14 @@ export async function launchOptions({
 	if (geoip) {
 		geoipAllowed();
 
-		// Find the user's IP address
-		geoip = await publicIP(proxyUrl?.href);
+		if (geoip === true) {
+			// Find the user's IP address
+			if (proxyUrl) {
+				geoip = await publicIP(proxyUrl.href);
+			} else {
+				geoip = await publicIP();
+			}
+		}
 
 		// Spoof WebRTC if not blocked
 		if (!block_webrtc) {
@@ -668,13 +706,13 @@ export async function launchOptions({
 			}
 		}
 
-		const geolocation = await getGeolocation(geoip);
-		config = { ...config, ...geolocation.asConfig() };
+		const geolocation = await getGeolocation(geoip, geoip_db);
+		Object.assign(config, geolocation.asConfig());
 	}
 
 	// Raise a warning when a proxy is being used without spoofing geolocation.
 	// This is a very bad idea; the warning cannot be ignored with i_know_what_im_doing.
-	if (
+	else if (
 		proxyUrl &&
 		!proxyUrl.hostname.includes("localhost") &&
 		!isDomainSet(config, "geolocation:")
@@ -737,12 +775,6 @@ export async function launchOptions({
 		});
 	}
 
-	// Canvas anti-fingerprinting
-	mergeInto(config, {
-		"canvas:aaOffset": Math.floor(Math.random() * 101) - 50, // nosec
-		"canvas:aaCapOffset": true,
-	});
-
 	// Cache previous pages, requests, etc (uses more memory)
 	if (enable_cache) {
 		mergeInto(firefox_user_prefs, CACHE_PREFS);
@@ -760,7 +792,7 @@ export async function launchOptions({
 	//Prepare environment variables to pass to Camoufox
 	const env_vars = {
 		...getEnvVars(config, targetOS),
-		...process.env,
+		...env,
 	};
 
 	// Prepare the executable path

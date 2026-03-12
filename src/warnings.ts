@@ -17,7 +17,7 @@ export class LeakWarning extends Error {
 			return;
 		}
 		if (iKnowWhatImDoing !== undefined) {
-			warning += "\nIf this is intentional, pass `iKnowWhatImDoing=true`.";
+			warning += "\nIf this is intentional, pass `i_know_what_im_doing=true`.";
 		}
 
 		const currentModule = currentDir;
