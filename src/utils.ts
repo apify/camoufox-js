@@ -757,6 +757,18 @@ export async function launchOptions({
 	// Validate the config
 	validateConfig(config, executable_path);
 
+	// On non-Linux, the Camoufox binary's C++ ICU timezone patch
+	// (timezone-spoofing.patch) crashes due to a reinterpret_cast from
+	// char16_t* to char* in TimeZone.cpp. Extract timezone from the config
+	// and pass it via Playwright's timezoneId context option instead.
+	// TODO: Remove this workaround once the Camoufox binary fixes the
+	// timezone-spoofing.patch for non-Linux platforms.
+	let _timezoneId: string | undefined;
+	if (OS_NAME !== "lin" && "timezone" in config) {
+		_timezoneId = config.timezone as string;
+		delete config.timezone;
+	}
+
 	//Prepare environment variables to pass to Camoufox
 	const env_vars = {
 		...getEnvVars(config, targetOS),
@@ -770,22 +782,28 @@ export async function launchOptions({
 		executable_path = launchPath();
 	}
 
-	const out: PlaywrightLaunchOptions = {
+	const out: PlaywrightLaunchOptions & { _timezoneId?: string } = {
 		executablePath: executable_path,
 		args: args,
 		env: env_vars as any,
 		firefoxUserPrefs: firefox_user_prefs,
-		proxy: proxyUrl
-			? {
-					server: proxyUrl.origin,
-					username: proxyUrl.username,
-					password: proxyUrl.password,
-					bypass: typeof proxy === "string" ? undefined : proxy?.bypass,
-				}
-			: undefined,
 		headless: headlessBoolean,
 		...launch_options,
 	};
+
+	if (_timezoneId) {
+		out._timezoneId = _timezoneId;
+	}
+
+	// Only include proxy if defined (Playwright 1.55+ validates this)
+	if (proxyUrl) {
+		out.proxy = {
+			server: proxyUrl.origin,
+			username: proxyUrl.username,
+			password: proxyUrl.password,
+			bypass: typeof proxy === "string" ? undefined : proxy?.bypass,
+		};
+	}
 
 	return out;
 }
