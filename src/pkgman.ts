@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import ProgressBar from "progress";
+import cliProgress from "cli-progress";
 import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
@@ -422,12 +422,15 @@ export async function webdl(
 	}
 
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
-	const progressBar = bar
-		? new ProgressBar(`${desc} [:bar] :percent :etas`, {
-				total: totalSize,
-				width: 40,
-			})
-		: null;
+	let progressBar: cliProgress.SingleBar | null = null;
+	if (bar) {
+		const totalForBar = totalSize > 0 ? totalSize : 1;
+		progressBar = new cliProgress.SingleBar({
+			format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total} bytes`,
+			hideCursor: true,
+		}, cliProgress.Presets.shades_classic);
+		progressBar.start(totalForBar, 0);
+	}
 
 	const chunks: Uint8Array[] = [];
 	for await (const chunk of response.body!) {
@@ -437,11 +440,17 @@ export async function webdl(
 			chunks.push(chunk);
 		}
 		if (progressBar) {
-			progressBar.tick(chunk.length, "X");
+			progressBar.increment(chunk.length);
 		}
 	}
 
 	const fileBuffer = Buffer.concat(chunks);
+	if (progressBar) {
+		try {
+			progressBar.update(totalSize > 0 ? totalSize : progressBar.getTotal());
+		} catch (_) {}
+		progressBar.stop();
+	}
 	return fileBuffer;
 }
 
