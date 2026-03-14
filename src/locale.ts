@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import tags from "language-tags";
-import maxmind, { type CityResponse } from "maxmind";
+import maxmind from "maxmind";
 import xml2js from "xml2js";
 import {
 	InvalidLocale,
@@ -159,8 +159,102 @@ function joinUnique(seq: string[]): string {
 	return seq.filter((x) => !seen.has(x) && seen.add(x)).join(", ");
 }
 
-const MMDB_FILE = path.join(INSTALL_DIR.toString(), "GeoLite2-City.mmdb");
-const MMDB_REPO = "P3TERX/GeoLite.mmdb";
+/** GeoIP database source configuration */
+interface GeoIPSource {
+	name: string;
+	urls: Record<string, string[]>;
+	paths: {
+		iso_code: string;
+		longitude: string;
+		latitude: string;
+		timezone: string;
+	};
+}
+
+const GEOIP_SOURCES: Record<string, GeoIPSource> = {
+	geolite2: {
+		name: "MaxMind GeoLite2",
+		urls: {
+			ipv4: [
+				"https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-city-mmdb/geolite2-city-ipv4.mmdb",
+				"https://raw.githubusercontent.com/sapics/ip-location-db/refs/heads/main/geolite2-city-mmdb/geolite2-city-ipv4.mmdb",
+			],
+			ipv6: [
+				"https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-city-mmdb/geolite2-city-ipv6.mmdb",
+				"https://raw.githubusercontent.com/sapics/ip-location-db/refs/heads/main/geolite2-city-mmdb/geolite2-city-ipv6.mmdb",
+			],
+		},
+		paths: {
+			iso_code: "country_code",
+			longitude: "longitude",
+			latitude: "latitude",
+			timezone: "timezone",
+		},
+	},
+	"geoip-aio": {
+		name: "GeoIP AIO by daijro",
+		urls: {
+			combined: [
+				"https://github.com/daijro/geoip-all-in-one/releases/latest/download/geoip-aio-all.mmdb.zip",
+			],
+		},
+		paths: {
+			iso_code: "country.iso_code",
+			longitude: "location.longitude",
+			latitude: "location.latitude",
+			timezone: "location.time_zone",
+		},
+	},
+};
+
+const DEFAULT_GEOIP_SOURCE = "geolite2";
+
+const MMDB_DIR = path.join(INSTALL_DIR.toString(), "geoip");
+
+function getGeoIPSource(name?: string): GeoIPSource {
+	const sourceName = name ?? DEFAULT_GEOIP_SOURCE;
+	const source = GEOIP_SOURCES[sourceName.toLowerCase()];
+	if (!source) {
+		const available = Object.keys(GEOIP_SOURCES).join(", ");
+		throw new Error(
+			`GeoIP database '${sourceName}' not found. Available: ${available}`,
+		);
+	}
+	return source;
+}
+
+function getMmdbPath(ipVersion: string = "ipv4", source?: GeoIPSource): string {
+	const src = source ?? getGeoIPSource();
+	const name = src.name.toLowerCase().replace(/\s+/g, "-");
+	if ("combined" in src.urls) {
+		return path.join(MMDB_DIR, `${name}-combined.mmdb`);
+	}
+	return path.join(MMDB_DIR, `${name}-${ipVersion}.mmdb`);
+}
+
+/** Resolve a dotted path in a nested object (e.g. "country.iso_code") */
+function findIn(data: any, key: string): any {
+	for (const part of key.split(".")) {
+		if (data == null || typeof data !== "object") return undefined;
+		data = data[part];
+	}
+	return data;
+}
+
+/** Check if the GeoIP database needs an update (older than 30 days) */
+function needsUpdate(mmdbPath: string): boolean {
+	if (!fs.existsSync(mmdbPath)) return true;
+	const stats = fs.statSync(mmdbPath);
+	const ageMs = Date.now() - stats.mtimeMs;
+	const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+	return ageMs > thirtyDaysMs;
+}
+
+// Legacy path for backwards compatibility
+const LEGACY_MMDB_FILE = path.join(
+	INSTALL_DIR.toString(),
+	"GeoLite2-City.mmdb",
+);
 
 class MaxMindDownloader extends GitHubDownloader {
 	checkAsset(asset: Record<string, any>): string | null {
@@ -183,7 +277,7 @@ export function geoipAllowed(): void {
 	}
 }
 
-export async function downloadMMDB(): Promise<void> {
+export async function downloadMMDB(sourceName?: string): Promise<void> {
 	geoipAllowed();
 
 	if (getAsBooleanFromENV("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", false)) {
@@ -193,60 +287,120 @@ export async function downloadMMDB(): Promise<void> {
 		return;
 	}
 
-	const assetUrl = await new MaxMindDownloader(MMDB_REPO).getAsset();
+	const source = getGeoIPSource(sourceName);
 
-	const fileStream = fs.createWriteStream(MMDB_FILE);
-	await webdl(assetUrl, "Downloading GeoIP database", true, fileStream);
+	// Ensure mmdb directory exists
+	if (!fs.existsSync(MMDB_DIR)) {
+		fs.mkdirSync(MMDB_DIR, { recursive: true });
+	}
+
+	for (const [ipVer, urlList] of Object.entries(source.urls)) {
+		const mmdbPath = getMmdbPath(ipVer, source);
+		let lastError: Error | null = null;
+
+		for (const url of urlList) {
+			try {
+				const fileStream = fs.createWriteStream(mmdbPath);
+				await webdl(
+					url,
+					`Downloading ${source.name} (${ipVer})`,
+					true,
+					fileStream,
+				);
+				lastError = null;
+				break;
+			} catch (e) {
+				lastError = e as Error;
+				continue;
+			}
+		}
+
+		if (lastError) {
+			throw lastError;
+		}
+	}
 }
 
 export function removeMMDB(): void {
-	if (!fs.existsSync(MMDB_FILE)) {
-		console.log("GeoIP database not found.");
+	// Remove new-style mmdb directory
+	if (fs.existsSync(MMDB_DIR)) {
+		fs.rmSync(MMDB_DIR, { recursive: true });
+		console.log("GeoIP database removed.");
 		return;
 	}
 
-	fs.unlinkSync(MMDB_FILE);
-	console.log("GeoIP database removed.");
-}
-
-export async function getGeolocation(ip: string): Promise<Geolocation> {
-	if (!fs.existsSync(MMDB_FILE)) {
-		await downloadMMDB();
+	// Remove legacy file
+	if (fs.existsSync(LEGACY_MMDB_FILE)) {
+		fs.unlinkSync(LEGACY_MMDB_FILE);
+		console.log("GeoIP database removed.");
+		return;
 	}
 
+	console.log("GeoIP database not found.");
+}
+
+export async function getGeolocation(
+	ip: string,
+	geoipDb?: string,
+): Promise<Geolocation> {
 	validateIP(ip);
 
-	const reader = await maxmind.open<CityResponse>(MMDB_FILE);
+	const source = getGeoIPSource(geoipDb);
+	const ipVersion = ip.includes(":") ? "ipv6" : "ipv4";
+	let mmdbPath = getMmdbPath(ipVersion, source);
 
-	const resp = reader.get(ip)!;
-	const isoCode = resp.country?.iso_code.toUpperCase();
-	const location = resp.location;
+	// Download if missing or outdated
+	if (!fs.existsSync(mmdbPath) || needsUpdate(mmdbPath)) {
+		// Check legacy path for backwards compatibility
+		if (
+			!geoipDb &&
+			fs.existsSync(LEGACY_MMDB_FILE) &&
+			!needsUpdate(LEGACY_MMDB_FILE)
+		) {
+			mmdbPath = LEGACY_MMDB_FILE;
+		} else {
+			await downloadMMDB(geoipDb);
+			mmdbPath = getMmdbPath(ipVersion, source);
+		}
+	}
 
-	if (
-		!location?.longitude ||
-		!location?.latitude ||
-		!location?.time_zone ||
-		!isoCode
-	) {
+	const reader = await maxmind.open(mmdbPath);
+	const resp = reader.get(ip) as Record<string, any> | null;
+
+	if (!resp) {
+		throw new UnknownIPLocation(`IP not found in database: ${ip}`);
+	}
+
+	const isoCode = findIn(resp, source.paths.iso_code);
+	const longitude = findIn(resp, source.paths.longitude);
+	const latitude = findIn(resp, source.paths.latitude);
+	const timezone = findIn(resp, source.paths.timezone);
+
+	if (!isoCode || longitude == null || latitude == null || !timezone) {
 		throw new UnknownIPLocation(`Unknown IP location: ${ip}`);
 	}
 
-	const locale = SELECTOR.fromRegion(isoCode);
+	const locale = SELECTOR.fromRegion(String(isoCode).toUpperCase());
 
 	return new Geolocation(
 		locale,
-		location.longitude,
-		location.latitude,
-		location.time_zone,
+		Number(longitude),
+		Number(latitude),
+		String(timezone),
 	);
 }
 
-async function getUnicodeInfo(): Promise<any> {
-	const data = await fs.promises.readFile(
+function getUnicodeInfo(): any {
+	const data = fs.readFileSync(
 		path.join(currentDir, "data-files", "territoryInfo.xml"),
 	);
 	const parser = new xml2js.Parser();
-	return parser.parseStringPromise(data);
+	let result: any;
+	parser.parseString(data, (err: Error | null, parsed: any) => {
+		if (err) throw err;
+		result = parsed;
+	});
+	return result;
 }
 
 function asFloat(element: any, attr: string): number {
@@ -257,11 +411,7 @@ class StatisticalLocaleSelector {
 	private root: any;
 
 	constructor() {
-		this.loadUnicodeInfo();
-	}
-
-	private async loadUnicodeInfo() {
-		this.root = await getUnicodeInfo();
+		this.root = getUnicodeInfo();
 	}
 
 	private loadTerritoryData(isoCode: string): [string[], number[]] {
@@ -286,8 +436,8 @@ class StatisticalLocaleSelector {
 	}
 
 	private loadLanguageData(language: string): [string[], number[]] {
-		const territories = this.root.territory.filter((t: any) =>
-			t.languagePopulation.some((lp: any) => lp.$.type === language),
+		const territories = this.root.territoryInfo.territory.filter((t: any) =>
+			t.languagePopulation?.some((lp: any) => lp.$.type === language),
 		);
 
 		if (!territories.length) {
