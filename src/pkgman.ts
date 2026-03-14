@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import ProgressBar from "progress";
+import cliProgress from "cli-progress";
 import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
@@ -396,35 +396,6 @@ export function launchPath(): string {
 	return launchPath;
 }
 
-interface Progress {
-	tick: (chunkLength: number, token: string) => void;
-}
-
-function toMegabytes(bytes: number) {
-	const mb = bytes / 1024 / 1024;
-	return `${Math.round(mb * 10) / 10} MiB`;
-}
-
-class BasicProgressBar {
-	public totalRows = 10;
-	public stepWidth = 8;
-	public lastRow = -1;
-	public totalDownloadedBytes = 0;
-
-	constructor(public totalBytes: number) { }
-
-	tick(downloadedBytes: number, tokens: string): void {
-		this.totalDownloadedBytes += downloadedBytes;
-		const percentage = this.totalDownloadedBytes / this.totalBytes;
-		const row = Math.floor(this.totalRows * percentage);
-		if (row > this.lastRow) {
-			this.lastRow = row;
-			const percentageString = String(percentage * 100 | 0).padStart(3);
-			// eslint-disable-next-line no-console
-			console.log(`|${tokens.repeat(row * this.stepWidth)}${' '.repeat((this.totalRows - row) * this.stepWidth)}| ${percentageString}% of ${toMegabytes(this.totalBytes)}`);
-		}
-	};
-}
 
 
 export async function webdl(
@@ -453,18 +424,14 @@ export async function webdl(
 	}
 
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
-	let progressBar: Progress | null = null;
-	let tokens = "X";
+	let progressBar: cliProgress.SingleBar | null = null;
 	if (bar) {
-		if (process.stdout.isTTY) {
-			progressBar = new ProgressBar(`${desc} [:bar] :percent :etas`, {
-				total: totalSize,
-				width: 40,
-			});
-		} else {
-			progressBar = new BasicProgressBar(totalSize);
-			tokens = '■';
-		}
+		const totalForBar = totalSize > 0 ? totalSize : 1;
+		progressBar = new cliProgress.SingleBar({
+			format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total} bytes`,
+			hideCursor: true,
+		}, cliProgress.Presets.shades_classic);
+		progressBar.start(totalForBar, 0);
 	}
 
 	const chunks: Uint8Array[] = [];
@@ -475,11 +442,17 @@ export async function webdl(
 			chunks.push(chunk);
 		}
 		if (progressBar) {
-			progressBar.tick(chunk.length, tokens);
+			progressBar.increment(chunk.length);
 		}
 	}
 
 	const fileBuffer = Buffer.concat(chunks);
+	if (progressBar) {
+		try {
+			progressBar.update(totalSize > 0 ? totalSize : progressBar.getTotal());
+		} catch (_) {}
+		progressBar.stop();
+	}
 	return fileBuffer;
 }
 
