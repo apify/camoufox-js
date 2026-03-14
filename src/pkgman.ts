@@ -396,8 +396,6 @@ export function launchPath(): string {
 	return launchPath;
 }
 
-
-
 export async function webdl(
 	url: string,
 	desc: string = "",
