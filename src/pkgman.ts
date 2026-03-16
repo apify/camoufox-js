@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import cliProgress from "cli-progress";
+import cliProgress, { Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
@@ -43,7 +43,7 @@ const currentDir =
 
 export const INSTALL_DIR: PathLike = userCacheDir("camoufox");
 
-const formatBytes = (v: number, _: Record<string, unknown>, type: string) =>
+const formatBytes = (v: number, _: Options, type: string) =>
 	type === "total" || type === "value" ? prettyBytes(v) : String(v);
 export const LOCAL_DATA: PathLike = path.join(currentDir, "data-files");
 
@@ -428,13 +428,16 @@ export async function webdl(
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
 	let progressBar: cliProgress.SingleBar | null = null;
 	if (bar && totalSize > 0) {
-		progressBar = new cliProgress.SingleBar({
-			format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total}`,
-			formatValue: formatBytes,
-			hideCursor: true,
-			noTTYOutput: true,
-			notTTYSchedule: 5000,
-		}, cliProgress.Presets.shades_classic);
+		progressBar = new cliProgress.SingleBar(
+			{
+				format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total}`,
+				formatValue: formatBytes,
+				hideCursor: true,
+				noTTYOutput: true,
+				notTTYSchedule: 5000,
+			},
+			cliProgress.Presets.shades_classic,
+		);
 		progressBar.start(totalSize, 0);
 	}
 
