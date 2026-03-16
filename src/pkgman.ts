@@ -432,9 +432,7 @@ export async function webdl(
 			{
 				format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total}`,
 				formatValue: formatBytes,
-				hideCursor: true,
 				noTTYOutput: true,
-				notTTYSchedule: 5000,
 			},
 			cliProgress.Presets.shades_classic,
 		);
