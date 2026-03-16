@@ -8,6 +8,7 @@ import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
 import cliProgress from "cli-progress";
+import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
@@ -41,6 +42,9 @@ const currentDir =
 	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
 export const INSTALL_DIR: PathLike = userCacheDir("camoufox");
+
+const formatBytes = (v: number, _: Record<string, unknown>, type: string) =>
+	type === "total" || type === "value" ? prettyBytes(v) : String(v);
 export const LOCAL_DATA: PathLike = path.join(currentDir, "data-files");
 
 export const OS_ARCH_MATRIX: { [key: string]: string[] } = {
@@ -423,35 +427,34 @@ export async function webdl(
 
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
 	let progressBar: cliProgress.SingleBar | null = null;
-	if (bar) {
-		const totalForBar = totalSize > 0 ? totalSize : 1;
+	if (bar && totalSize > 0) {
 		progressBar = new cliProgress.SingleBar({
-			format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total} bytes`,
+			format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total}`,
+			formatValue: formatBytes,
 			hideCursor: true,
+			noTTYOutput: true,
+			notTTYSchedule: 5000,
 		}, cliProgress.Presets.shades_classic);
-		progressBar.start(totalForBar, 0);
+		progressBar.start(totalSize, 0);
 	}
 
 	const chunks: Uint8Array[] = [];
-	for await (const chunk of response.body!) {
-		if (buffer) {
-			buffer.write(chunk);
-		} else {
-			chunks.push(chunk);
+	try {
+		for await (const chunk of response.body!) {
+			if (buffer) {
+				buffer.write(chunk);
+			} else {
+				chunks.push(chunk);
+			}
+			if (progressBar) {
+				progressBar.increment(chunk.length);
+			}
 		}
-		if (progressBar) {
-			progressBar.increment(chunk.length);
-		}
+	} finally {
+		progressBar?.stop();
 	}
 
-	const fileBuffer = Buffer.concat(chunks);
-	if (progressBar) {
-		try {
-			progressBar.update(totalSize > 0 ? totalSize : progressBar.getTotal());
-		} catch (_) {}
-		progressBar.stop();
-	}
-	return fileBuffer;
+	return Buffer.concat(chunks);
 }
 
 export async function unzip(
