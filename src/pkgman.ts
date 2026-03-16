@@ -7,7 +7,8 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import ProgressBar from "progress";
+import cliProgress, { Options } from "cli-progress";
+import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
 	CamoufoxNotInstalled,
@@ -41,6 +42,9 @@ const currentDir =
 	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
 export const INSTALL_DIR: PathLike = userCacheDir("camoufox");
+
+const formatBytes = (v: number, _: Options, type: string) =>
+	type === "total" || type === "value" ? prettyBytes(v) : String(v);
 export const LOCAL_DATA: PathLike = path.join(currentDir, "data-files");
 
 export const OS_ARCH_MATRIX: { [key: string]: string[] } = {
@@ -422,27 +426,36 @@ export async function webdl(
 	}
 
 	const totalSize = parseInt(response.headers.get("content-length") || "0", 10);
-	const progressBar = bar
-		? new ProgressBar(`${desc} [:bar] :percent :etas`, {
-				total: totalSize,
-				width: 40,
-			})
-		: null;
-
-	const chunks: Uint8Array[] = [];
-	for await (const chunk of response.body!) {
-		if (buffer) {
-			buffer.write(chunk);
-		} else {
-			chunks.push(chunk);
-		}
-		if (progressBar) {
-			progressBar.tick(chunk.length, "X");
-		}
+	let progressBar: cliProgress.SingleBar | null = null;
+	if (bar && totalSize > 0) {
+		progressBar = new cliProgress.SingleBar(
+			{
+				format: `${desc} [{bar}] {percentage}% | ETA: {eta_formatted} | {value}/{total}`,
+				formatValue: formatBytes,
+				noTTYOutput: true,
+			},
+			cliProgress.Presets.shades_classic,
+		);
+		progressBar.start(totalSize, 0);
 	}
 
-	const fileBuffer = Buffer.concat(chunks);
-	return fileBuffer;
+	const chunks: Uint8Array[] = [];
+	try {
+		for await (const chunk of response.body!) {
+			if (buffer) {
+				buffer.write(chunk);
+			} else {
+				chunks.push(chunk);
+			}
+			if (progressBar) {
+				progressBar.increment(chunk.length);
+			}
+		}
+	} finally {
+		progressBar?.stop();
+	}
+
+	return Buffer.concat(chunks);
 }
 
 export async function unzip(
