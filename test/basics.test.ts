@@ -145,11 +145,13 @@ test("Persistent context works", async () => {
 		await page.goto("https://example.com");
 
 		readCookies = await page.evaluate(() => {
-			const cookies = document.cookie.split("; ").reduce<Record<string, string>>((acc, cookie) => {
-				const [name, value] = cookie.split("=");
-				acc[name] = value;
-				return acc;
-			}, {});
+			const cookies = document.cookie
+				.split("; ")
+				.reduce<Record<string, string>>((acc, cookie) => {
+					const [name, value] = cookie.split("=");
+					acc[name] = value;
+					return acc;
+				}, {});
 			return cookies;
 		});
 
@@ -159,7 +161,6 @@ test("Persistent context works", async () => {
 
 	expect(readCookies).toEqual({ name: "value" });
 }, 30e3);
-
 
 describe("Fingerprint injection", () => {
 	test("custom window size is applied", async () => {
@@ -272,9 +273,7 @@ describe("Fingerprint injection", () => {
 
 		const hasWebGL = await page.evaluate(() => {
 			const canvas = document.createElement("canvas");
-			return !!(
-				canvas.getContext("webgl") || canvas.getContext("webgl2")
-			);
+			return !!(canvas.getContext("webgl") || canvas.getContext("webgl2"));
 		});
 
 		expect(hasWebGL).toBe(false);

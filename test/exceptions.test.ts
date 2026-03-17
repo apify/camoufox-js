@@ -79,7 +79,9 @@ describe("Exception hierarchy", () => {
 	test("VirtualDisplay errors extend VirtualDisplayError", () => {
 		expect(new CannotFindXvfb()).toBeInstanceOf(VirtualDisplayError);
 		expect(new CannotExecuteXvfb()).toBeInstanceOf(VirtualDisplayError);
-		expect(new VirtualDisplayNotSupported()).toBeInstanceOf(VirtualDisplayError);
+		expect(new VirtualDisplayNotSupported()).toBeInstanceOf(
+			VirtualDisplayError,
+		);
 	});
 
 	test("InvalidLocale.invalidInput creates proper message", () => {
