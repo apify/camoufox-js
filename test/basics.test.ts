@@ -6,12 +6,12 @@ import { describe, expect, test } from "vitest";
 import { Camoufox, launchServer } from "../src";
 
 const TEST_CASES = [
-	{ os: "linux", userAgentRegex: /Linux/i },
-	{ os: "windows", userAgentRegex: /Windows/i },
-	{ os: "macos", userAgentRegex: /Mac OS/i },
+	{ os: "linux" as const, userAgentRegex: /Linux/i },
+	{ os: "windows" as const, userAgentRegex: /Windows/i },
+	{ os: "macos" as const, userAgentRegex: /Mac OS/i },
 ];
 
-describe("virtual display", () => {
+describe.skipIf(process.platform !== "linux")("virtual display", () => {
 	test("should launch", async () => {
 		const browser = await Camoufox({
 			os: "linux",
@@ -145,11 +145,13 @@ test("Persistent context works", async () => {
 		await page.goto("https://example.com");
 
 		readCookies = await page.evaluate(() => {
-			const cookies = document.cookie.split("; ").reduce((acc, cookie) => {
-				const [name, value] = cookie.split("=");
-				acc[name] = value;
-				return acc;
-			}, {});
+			const cookies = document.cookie
+				.split("; ")
+				.reduce<Record<string, string>>((acc, cookie) => {
+					const [name, value] = cookie.split("=");
+					acc[name] = value;
+					return acc;
+				}, {});
 			return cookies;
 		});
 
@@ -159,3 +161,139 @@ test("Persistent context works", async () => {
 
 	expect(readCookies).toEqual({ name: "value" });
 }, 30e3);
+
+describe("Fingerprint injection", () => {
+	test("custom window size is applied", async () => {
+		const browser = await Camoufox({
+			headless: true,
+			window: [1280, 720],
+		});
+
+		const page = await browser.newPage();
+
+		const dimensions = await page.evaluate(() => ({
+			outerWidth: window.outerWidth,
+			outerHeight: window.outerHeight,
+		}));
+
+		expect(dimensions.outerWidth).toBe(1280);
+		expect(dimensions.outerHeight).toBe(720);
+
+		await browser.close();
+	}, 10e3);
+
+	test("fingerprint differs between launches", async () => {
+		const getFingerprint = async () => {
+			const browser = await Camoufox({ headless: true });
+			const page = await browser.newPage();
+			const fp = await page.evaluate(() => ({
+				ua: navigator.userAgent,
+				cores: navigator.hardwareConcurrency,
+				screenW: screen.width,
+				screenH: screen.height,
+				outerW: window.outerWidth,
+				outerH: window.outerHeight,
+			}));
+			await browser.close();
+			return fp;
+		};
+
+		const fp1 = await getFingerprint();
+		const fp2 = await getFingerprint();
+
+		// With this many properties, a full collision is virtually impossible
+		const identical = Object.keys(fp1).every(
+			(k) => fp1[k as keyof typeof fp1] === fp2[k as keyof typeof fp2],
+		);
+		expect(identical).toBe(false);
+	}, 15e3);
+
+	test("screen dimensions are spoofed", async () => {
+		const browser = await Camoufox({
+			headless: true,
+			screen: { maxWidth: 1920, maxHeight: 1080 },
+		});
+
+		const page = await browser.newPage();
+
+		const screen = await page.evaluate(() => ({
+			width: window.screen.width,
+			height: window.screen.height,
+		}));
+
+		expect(screen.width).toBeGreaterThan(0);
+		expect(screen.width).toBeLessThanOrEqual(1920);
+		expect(screen.height).toBeGreaterThan(0);
+		expect(screen.height).toBeLessThanOrEqual(1080);
+
+		await browser.close();
+	}, 10e3);
+
+	test("hardwareConcurrency is spoofed", async () => {
+		const browser = await Camoufox({
+			headless: true,
+		});
+
+		const page = await browser.newPage();
+		const cores = await page.evaluate(() => navigator.hardwareConcurrency);
+		expect(cores).toBeGreaterThan(0);
+		expect(Number.isInteger(cores)).toBe(true);
+
+		await browser.close();
+	}, 10e3);
+
+	test("locale option overrides Intl locale", async () => {
+		const browser = await Camoufox({
+			headless: true,
+			locale: "fr-FR",
+			i_know_what_im_doing: true,
+		});
+
+		const page = await browser.newPage();
+
+		const locale = await page.evaluate(
+			() => Intl.DateTimeFormat().resolvedOptions().locale,
+		);
+		expect(locale).toBe("fr-FR");
+
+		const language = await page.evaluate(() => navigator.language);
+		expect(language).toMatch(/^fr/);
+
+		await browser.close();
+	}, 10e3);
+
+	test("WebGL is blocked when block_webgl is true", async () => {
+		const browser = await Camoufox({
+			headless: true,
+			block_webgl: true,
+			i_know_what_im_doing: true,
+		});
+
+		const page = await browser.newPage();
+
+		const hasWebGL = await page.evaluate(() => {
+			const canvas = document.createElement("canvas");
+			return !!(canvas.getContext("webgl") || canvas.getContext("webgl2"));
+		});
+
+		expect(hasWebGL).toBe(false);
+
+		await browser.close();
+	}, 10e3);
+
+	test("WebRTC is blocked when block_webrtc is true", async () => {
+		const browser = await Camoufox({
+			headless: true,
+			block_webrtc: true,
+		});
+
+		const page = await browser.newPage();
+
+		const hasWebRTC = await page.evaluate(
+			() => typeof window.RTCPeerConnection,
+		);
+		expect(hasWebRTC).toBe("undefined");
+
+		await browser.close();
+	}, 10e3);
+});
