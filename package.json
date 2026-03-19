@@ -44,7 +44,7 @@
 		"xml2js": "^0.6.2"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.7",
+		"@biomejs/biome": "2.4.8",
 		"@types/adm-zip": "^0.5.7",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/cli-progress": "^3.11.6",
