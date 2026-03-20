@@ -164,7 +164,9 @@ export class GitHubDownloader {
 
 		while (attempts < retries) {
 			try {
-				response = await fetch(this.apiUrl, { headers: getAuthorizationHeaders(this.apiUrl) });
+				response = await fetch(this.apiUrl, {
+					headers: getAuthorizationHeaders(this.apiUrl),
+				});
 				if (response.ok) break;
 			} catch (e) {
 				console.error(e, `retrying (${attempts + 1}/${retries})...`);
@@ -253,7 +255,9 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	}
 
 	static async downloadFile(url: string): Promise<Buffer> {
-		const response = await fetch(url, { headers: getAuthorizationHeaders(url) });
+		const response = await fetch(url, {
+			headers: getAuthorizationHeaders(url),
+		});
 
 		return Buffer.from(await response.arrayBuffer());
 	}
