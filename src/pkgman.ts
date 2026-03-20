@@ -149,12 +149,16 @@ export class GitHubDownloader {
 	async getAsset(
 		{ retries }: { retries: number } = { retries: 5 },
 	): Promise<any> {
+		const githubToken = process.env.GITHUB_TOKEN;
+		const headers: HeadersInit = githubToken
+			? { Authorization: `Bearer ${githubToken}` }
+			: {};
 		let attempts = 0;
 		let response: Response | undefined;
 
 		while (attempts < retries) {
 			try {
-				response = await fetch(this.apiUrl);
+				response = await fetch(this.apiUrl, { headers });
 				if (response.ok) break;
 			} catch (e) {
 				console.error(e, `retrying (${attempts + 1}/${retries})...`);
