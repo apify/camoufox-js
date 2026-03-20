@@ -32,6 +32,16 @@ const OS_MAP: { [key: string]: "mac" | "win" | "lin" } = {
 	win32: "win",
 };
 
+function getAuthorizationHeaders(url: string): HeadersInit {
+	const githubToken = process.env.GITHUB_TOKEN;
+	if (!githubToken) return {};
+	const host = new URL(url).hostname;
+	if (host === "api.github.com" || host === "github.com") {
+		return { Authorization: `Bearer ${githubToken}` };
+	}
+	return {};
+}
+
 if (!(process.platform in OS_MAP)) {
 	throw new UnsupportedOS(`OS ${process.platform} is not supported`);
 }
@@ -154,7 +164,9 @@ export class GitHubDownloader {
 
 		while (attempts < retries) {
 			try {
-				response = await fetch(this.apiUrl);
+				response = await fetch(this.apiUrl, {
+					headers: getAuthorizationHeaders(this.apiUrl),
+				});
 				if (response.ok) break;
 			} catch (e) {
 				console.error(e, `retrying (${attempts + 1}/${retries})...`);
@@ -243,7 +255,9 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	}
 
 	static async downloadFile(url: string): Promise<Buffer> {
-		const response = await fetch(url);
+		const response = await fetch(url, {
+			headers: getAuthorizationHeaders(url),
+		});
 
 		return Buffer.from(await response.arrayBuffer());
 	}
@@ -412,7 +426,7 @@ export async function webdl(
 
 	while (attempts < retries) {
 		try {
-			response = await fetch(url);
+			response = await fetch(url, { headers: getAuthorizationHeaders(url) });
 			if (response.ok) break;
 		} catch (e) {
 			console.error(e, `retrying (${attempts + 1}/${retries})...`);
