@@ -1,5 +1,13 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:recommended"],
-	"dependencyDashboard": false
+	"dependencyDashboard": false,
+	"minimumReleaseAge": "1 day",
+	"internalChecksFilter": "strict",
+	"packageRules": [
+		{
+			"matchPackageNames": ["@apify/*", "@crawlee/*"],
+			"minimumReleaseAge": "0 days"
+		}
+	]
 }

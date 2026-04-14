@@ -50,32 +50,22 @@ jobs:
                     package-manager-cache: false
                     registry-url: 'https://registry.npmjs.org'
 
-            -   name: Enable corepack
-                run: |
-                    corepack enable
-                    corepack prepare yarn@stable --activate
-
-            -   name: Activate cache for Node.js 24
-                uses: actions/setup-node@v6
-                with:
-                    cache: 'yarn'
-
-            -   name: Install dependencies
-                run: yarn --immutable
+            -   name: Install pnpm and dependencies
+                uses: ./.github/actions/pnpm-install
 
             -   name: Run TypeScript build
-                run: yarn build
+                run: pnpm build
 
             -   name: Bump version to custom version
                 if: ${{ github.event.inputs.version == 'custom' && github.event.inputs.custom_version != '' }}
-                run: yarn version ${{ github.event.inputs.custom_version }}
+                run: pnpm version ${{ github.event.inputs.custom_version }}
                 env:
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             -   name: Bump version to ${{ github.event.inputs.version }} version
                 if: ${{ github.event.inputs.version != 'custom' }}
-                run: yarn version ${{ github.event.inputs.version }}
+                run: pnpm version ${{ github.event.inputs.version }}
                 env:
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
@@ -89,4 +79,4 @@ jobs:
                     message: 'chore(release): Update package version [skip ci]'
 
             -   name: Publish to npm
-                run: npm publish --provenance
+                run: pnpm publish --no-git-checks --provenance
