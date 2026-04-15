@@ -41,7 +41,6 @@ export class VirtualDisplay {
 			"XVideo-MotionCompensation",
 			"-extension",
 			"XINERAMA",
-			"-shmem",
 			"-fp",
 			"built-ins",
 			"-nocursor",
