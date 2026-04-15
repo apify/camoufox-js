@@ -51,7 +51,7 @@ jobs:
                     registry-url: 'https://registry.npmjs.org'
 
             -   name: Install pnpm and dependencies
-                uses: ./.github/actions/pnpm-install
+                uses: apify/workflows/pnpm-install@main
 
             -   name: Run TypeScript build
                 run: pnpm build
