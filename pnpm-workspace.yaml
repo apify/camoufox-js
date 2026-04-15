@@ -4,4 +4,6 @@ minimumReleaseAgeExclude:
   - "@crawlee/*"
 
 onlyBuiltDependencies:
+  - better-sqlite3
   - esbuild
+  - playwright-core
