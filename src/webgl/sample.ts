@@ -10,20 +10,23 @@ interface SqliteDatabase {
 	close(): void;
 }
 
+let DatabaseConstructor: (new (path: string) => SqliteDatabase) | null = null;
+
 async function openDatabase(pathName: string): Promise<SqliteDatabase> {
-	if (typeof Bun !== "undefined") {
-		// @ts-expect-error - bun:sqlite only exists in Bun runtime
-		const { Database: BunDatabase } = await import("bun:sqlite");
-		return new BunDatabase(pathName);
+	if (!DatabaseConstructor) {
+		if (typeof Bun !== "undefined") {
+			// @ts-expect-error - bun:sqlite only exists in Bun runtime
+			const { Database: BunDatabase } = await import("bun:sqlite");
+			DatabaseConstructor = BunDatabase;
+		} else if (typeof Deno !== "undefined") {
+			const { DatabaseSync } = await import("node:sqlite");
+			DatabaseConstructor = DatabaseSync;
+		} else {
+			const { default: BetterSqlite3 } = await import("better-sqlite3");
+			DatabaseConstructor = BetterSqlite3;
+		}
 	}
-
-	if (typeof Deno !== "undefined") {
-		const { DatabaseSync } = await import("node:sqlite");
-		return new DatabaseSync(pathName);
-	}
-
-	const { default: BetterSqlite3 } = await import("better-sqlite3");
-	return new BetterSqlite3(pathName);
+	return new DatabaseConstructor!(pathName);
 }
 
 // Get database path relative to this file
