@@ -3,31 +3,27 @@ import { fileURLToPath } from "node:url";
 import { OS_ARCH_MATRIX } from "../pkgman.js";
 
 declare const Bun: unknown;
+declare const Deno: unknown;
 
 interface SqliteDatabase {
 	prepare(query: string): { all(...params: any[]): any[] };
 	close(): void;
 }
 
-let DatabaseConstructor: (new (path: string) => SqliteDatabase) | null = null;
-
 async function openDatabase(pathName: string): Promise<SqliteDatabase> {
-	if (!DatabaseConstructor) {
-		if (typeof Bun !== "undefined") {
-			// @ts-expect-error - bun:sqlite only exists in Bun runtime
-			const { Database: BunDatabase } = await import("bun:sqlite");
-			DatabaseConstructor = BunDatabase;
-		} else {
-			try {
-				const { DatabaseSync } = await import("node:sqlite");
-				DatabaseConstructor = DatabaseSync;
-			} catch {
-				const { default: NodeDatabase } = await import("better-sqlite3");
-				DatabaseConstructor = NodeDatabase;
-			}
-		}
+	if (typeof Bun !== "undefined") {
+		// @ts-expect-error - bun:sqlite only exists in Bun runtime
+		const { Database: BunDatabase } = await import("bun:sqlite");
+		return new BunDatabase(pathName);
 	}
-	return new DatabaseConstructor!(pathName);
+
+	if (typeof Deno !== "undefined") {
+		const { DatabaseSync } = await import("node:sqlite");
+		return new DatabaseSync(pathName);
+	}
+
+	const { default: BetterSqlite3 } = await import("better-sqlite3");
+	return new BetterSqlite3(pathName);
 }
 
 // Get database path relative to this file
