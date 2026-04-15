@@ -760,7 +760,7 @@ export async function launchOptions({
 	//Prepare environment variables to pass to Camoufox
 	const env_vars = {
 		...getEnvVars(config, targetOS),
-		...process.env,
+		...env,
 	};
 
 	// Prepare the executable path
