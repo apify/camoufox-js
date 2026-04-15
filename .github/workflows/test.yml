@@ -35,7 +35,7 @@ jobs:
               run: pnpm build
 
             - name: Install Camoufox
-              run: pnpm exec camoufox fetch
+              run: pnpm exec camoufox-js fetch
 
             - name: Run tests
               run: pnpm test --retry=3
