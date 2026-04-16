@@ -58,14 +58,14 @@ jobs:
 
             -   name: Bump version to custom version
                 if: ${{ github.event.inputs.version == 'custom' && github.event.inputs.custom_version != '' }}
-                run: pnpm version ${{ github.event.inputs.custom_version }}
+                run: pnpm version --no-git-tag-version ${{ github.event.inputs.custom_version }}
                 env:
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             -   name: Bump version to ${{ github.event.inputs.version }} version
                 if: ${{ github.event.inputs.version != 'custom' }}
-                run: pnpm version ${{ github.event.inputs.version }}
+                run: pnpm version --no-git-tag-version ${{ github.event.inputs.version }}
                 env:
                     GIT_USER: 'noreply@apify.com:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}'
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
