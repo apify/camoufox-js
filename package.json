@@ -4,10 +4,11 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "rimraf dist && tsc && npm run copy-files",
+		"build": "rimraf dist && tsc && pnpm copy-files",
 		"test": "vitest",
 		"copy-files": "cp -r src/data-files dist/data-files",
-		"check": "biome check"
+		"check": "biome check",
+		"preinstall": "npx only-allow pnpm"
 	},
 	"bin": "dist/__main__.js",
 	"files": [
@@ -28,7 +29,7 @@
 	},
 	"license": "MPL-2.0",
 	"description": "Experimental JS port of Camoufox for Python.",
-	"packageManager": "yarn@4.13.0",
+	"packageManager": "pnpm@10.24.0",
 	"dependencies": {
 		"adm-zip": "^0.5.16",
 		"better-sqlite3": "^12.2.0",

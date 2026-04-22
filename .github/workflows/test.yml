@@ -11,31 +11,31 @@ jobs:
     run_ts_build_and_test:
         name: Run TypeScript build & Test
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: [20, 22, 24]
         steps:
             - name: Checkout code
               uses: actions/checkout@v6
 
-            - name: Set up Node.js
+            - name: Set up Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v6
               with:
-                  node-version: '24'
+                  node-version: ${{ matrix.node-version }}
                   package-manager-cache: false
 
-            - name: Enable corepack
-              run: corepack enable
-
-            - name: Install dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Check formatting + linting
-              run: yarn check
+              run: pnpm check
 
             - name: Run TypeScript build
-              run: yarn build
+              run: pnpm build
 
             - name: Install Camoufox
-              run: npx camoufox fetch
+              run: node dist/__main__.js fetch
 
             - name: Run tests
-              run: yarn test --retry=3
-
+              run: pnpm test --retry=3
