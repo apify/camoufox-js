@@ -44,7 +44,7 @@ export async function NewBrowser<
 
 	if (headless === "virtual") {
 		virtualDisplay = new VirtualDisplay(debug);
-		launch_options.virtual_display = virtualDisplay.get();
+		launch_options.virtual_display = await virtualDisplay.get();
 	}
 
 	if (!fromOptions || Object.keys(fromOptions).length === 0) {
