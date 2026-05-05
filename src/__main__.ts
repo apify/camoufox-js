@@ -49,6 +49,12 @@ class CamoufoxUpdate extends CamoufoxFetcher {
 				console.log(
 					`No cached Camoufox binary found at ${INSTALL_DIR}. Provision it before launching, or unset PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD to download.`,
 				);
+			} else if (
+				getAsBooleanFromENV("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", false)
+			) {
+				console.log(
+					`Using cached Camoufox v${this.currentVerStr} (update check skipped).`,
+				);
 			} else {
 				console.log("Camoufox binaries up to date!");
 				console.log(`Current version: v${this.currentVerStr}`);
