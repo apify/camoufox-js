@@ -6,7 +6,8 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["src/**/*.ts", "test/**/*.ts"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -14,7 +15,6 @@
 	},
 	"linter": {
 		"enabled": true,
-		"includes": ["src/**/*.ts", "tests/**/*.ts"],
 		"rules": {
 			"recommended": true,
 			"suspicious": {
