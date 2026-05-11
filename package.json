@@ -7,8 +7,7 @@
 		"build": "rimraf dist && tsc && pnpm copy-files",
 		"test": "vitest",
 		"copy-files": "cp -r src/data-files dist/data-files",
-		"check": "biome check",
-		"preinstall": "npx only-allow pnpm"
+		"check": "biome check"
 	},
 	"bin": "dist/__main__.js",
 	"files": [
@@ -29,7 +28,7 @@
 	},
 	"license": "MPL-2.0",
 	"description": "Experimental JS port of Camoufox for Python.",
-	"packageManager": "pnpm@10.24.0",
+	"packageManager": "pnpm@10.33.4",
 	"dependencies": {
 		"adm-zip": "^0.5.16",
 		"better-sqlite3": "^12.2.0",
@@ -59,5 +58,12 @@
 	},
 	"peerDependencies": {
 		"playwright-core": "*"
+	},
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "10.33.4",
+			"onFail": "warn"
+		}
 	}
 }
