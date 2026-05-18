@@ -26,7 +26,7 @@ jobs:
                   package-manager-cache: false
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.0.0
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Check formatting + linting
               run: pnpm check
