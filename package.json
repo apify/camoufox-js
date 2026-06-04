@@ -24,7 +24,7 @@
 		"url": "https://github.com/apify/camoufox-js/issues"
 	},
 	"engines": {
-		"node": ">= 20"
+		"node": ">= 22"
 	},
 	"license": "MPL-2.0",
 	"description": "Experimental JS port of Camoufox for Python.",
