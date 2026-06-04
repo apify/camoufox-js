@@ -6,7 +6,7 @@ export class CONSTRAINTS {
 	/**
 	 * The minimum and maximum supported versions of the Camoufox browser.
 	 */
-	static readonly MIN_VERSION: string = "beta.19";
+	static readonly MIN_VERSION: string = "alpha.1";
 	static readonly MAX_VERSION: string = "1";
 
 	static asRange(): string {
