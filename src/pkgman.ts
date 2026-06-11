@@ -51,7 +51,15 @@ export const OS_NAME: "mac" | "win" | "lin" = OS_MAP[process.platform];
 const currentDir =
 	import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
-export const INSTALL_DIR: PathLike = userCacheDir("camoufox");
+/**
+ * Directory the Camoufox browser is downloaded to and launched from.
+ * Defaults to the per-user cache directory; set CAMOUFOX_INSTALL_DIR to
+ * relocate it (e.g. into a container image layer when the home directory
+ * is ephemeral or persisted separately).
+ */
+export const INSTALL_DIR: PathLike = process.env.CAMOUFOX_INSTALL_DIR
+	? path.resolve(process.env.CAMOUFOX_INSTALL_DIR)
+	: userCacheDir("camoufox");
 
 const formatBytes = (v: number, _: Options, type: string) =>
 	type === "total" || type === "value" ? prettyBytes(v) : String(v);

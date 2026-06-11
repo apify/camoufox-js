@@ -8,6 +8,17 @@ This is the JavaScript client for Camoufox. It is a port of the Python wrapper (
 npm install camoufox-js
 ```
 
+The Camoufox browser itself is downloaded with `npx camoufox-js fetch` into the
+per-user cache directory (`~/.cache/camoufox` on Linux). Set the
+`CAMOUFOX_INSTALL_DIR` environment variable to install and resolve it from a
+custom location instead — useful in containers and CI images where the home
+directory is ephemeral or persisted separately (similar to Playwright's
+`PLAYWRIGHT_BROWSERS_PATH`):
+
+```bash
+CAMOUFOX_INSTALL_DIR=/opt/camoufox npx camoufox-js fetch
+```
+
 ## Usage 
 
 You can launch Playwright-controlled Camoufox using this package like this:
