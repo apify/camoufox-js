@@ -72,6 +72,33 @@ export function validateIP(ip: string): void {
 	}
 }
 
+// Impit has no close/dispose API: each instance's native client (Tokio
+// runtime resources, one UDP resolver socket) is only reclaimed when the
+// JS wrapper is GC'd — and V8 rarely collects the tiny wrappers, so
+// per-call instances leak fds in long-running processes. Reuse instances
+// via a small LRU keyed by proxy URL; evicted entries are reclaimed by GC.
+const IMPIT_CACHE_MAX = 8;
+const impitCache = new Map<string, Impit>();
+
+function getImpit(proxy?: string): Impit {
+	const key = proxy ?? "";
+	const cached = impitCache.get(key);
+	if (cached) {
+		impitCache.delete(key);
+		impitCache.set(key, cached);
+		return cached;
+	}
+	const impit = new Impit({
+		proxyUrl: proxy,
+		timeout: 5000,
+	});
+	impitCache.set(key, impit);
+	if (impitCache.size > IMPIT_CACHE_MAX) {
+		impitCache.delete(impitCache.keys().next().value as string);
+	}
+	return impit;
+}
+
 export async function publicIP(proxy?: string): Promise<string> {
 	const URLS = [
 		"https://api.ipify.org",
@@ -86,11 +113,7 @@ export async function publicIP(proxy?: string): Promise<string> {
 
 	for (const url of URLS) {
 		try {
-			const impit = new Impit({
-				proxyUrl: proxy,
-				timeout: 5000,
-			});
-			const response = await impit.fetch(url);
+			const response = await getImpit(proxy).fetch(url);
 
 			if (!response.ok) {
 				continue;
