@@ -31,6 +31,7 @@ import { geoipAllowed, getGeolocation, handleLocales } from "./locale.js";
 import FONTS from "./mappings/fonts.config.js";
 import { getPath, installedVerStr, launchPath, OS_NAME } from "./pkgman.js";
 import type { VirtualDisplay } from "./virtdisplay.js";
+import { generateVoiceSubset } from "./voices.js";
 import { LeakWarning } from "./warnings.js";
 import { sampleWebGL } from "./webgl/sample.js";
 
@@ -685,6 +686,32 @@ export async function launchOptions({
 	// Set locale
 	if (locale) {
 		handleLocales(locale, config);
+	}
+
+	// Per-OS speech voice list. Without this, Firefox registers the HOST
+	// machine's speech-dispatcher / SAPI / NSSpeech voices into
+	// navigator.speechSynthesis — so a spoofed identity leaks whatever OS the
+	// wrapper actually runs on (e.g. a Windows host spoofing macOS exposes
+	// SAPI voices; a Linux host spoofing Windows exposes the eSpeak catalog).
+	// Override with a list matching the SPOOFED OS for every target, including
+	// Linux. The camoufox C++ patch (voice-spoofing.patch) provides MVoices()
+	// for the override list and `voices:blockIfNotDefined` to suppress the
+	// native registration; we feed both here. User-supplied `config.voices`
+	// wins.
+	//
+	// Runs AFTER locale handling so the default-voice picker can match the
+	// spoofed locale prefix and avoid CreepJS's voiceLangMismatch flag.
+	if (!isDomainSet(config, "voices")) {
+		const lang = config["locale:language"] as string | undefined;
+		const region = config["locale:region"] as string | undefined;
+		const localeStr = lang && region ? `${lang}-${region}` : lang;
+		const voices = generateVoiceSubset(targetOS, localeStr);
+		setInto(config, "voices", voices);
+		setInto(config, "voices:blockIfNotDefined", true);
+		// Fake speak/end events so apps that test speechSynthesis.speak() flow
+		// don't hang on our synthetic voices. 12.5 cps ≈ 150 wpm, the patch's
+		// natural default.
+		setInto(config, "voices:fakeCompletion", true);
 	}
 
 	// Pass the humanize option
