@@ -316,12 +316,15 @@ async function _asyncAttachVD(
 		return browser;
 	}
 
-	const originalClose = browser.close;
+	const originalClose = browser.close.bind(browser);
 
 	browser.close = async (...args: any[]) => {
-		await originalClose.apply(browser, ...args);
-		if (virtualDisplay) {
-			virtualDisplay.kill();
+		try {
+			return await originalClose(...args);
+		} finally {
+			if (virtualDisplay) {
+				virtualDisplay.kill();
+			}
 		}
 	};
 
@@ -342,12 +345,15 @@ export function syncAttachVD(
 		return browser;
 	}
 
-	const originalClose = browser.close;
+	const originalClose = browser.close.bind(browser);
 
-	browser.close = (...args: any[]) => {
-		originalClose.apply(browser, ...args);
-		if (virtualDisplay) {
-			virtualDisplay.kill();
+	browser.close = async (...args: any[]) => {
+		try {
+			return await originalClose(...args);
+		} finally {
+			if (virtualDisplay) {
+				virtualDisplay.kill();
+			}
 		}
 	};
 
