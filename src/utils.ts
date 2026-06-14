@@ -687,6 +687,25 @@ export async function launchOptions({
 		handleLocales(locale, config);
 	}
 
+	// Spoof navigator.mediaDevices.enumerateDevices() so headless contexts
+	// expose a plausible device list. On a typical real desktop browser
+	// without explicit mic permission you see one audioinput + one videoinput
+	// (speakers gated by mCanExposeMicrophoneInfo). The patched
+	// MediaDevices::FilterExposedDevices reads:
+	//   - mediaDevices:enabled  (bool, must be true to inject fakes)
+	//   - mediaDevices:micros   (uint32, default 3)
+	//   - mediaDevices:webcams  (uint32, default 1)
+	//   - mediaDevices:speakers (uint32, default 1)
+	// We default to one of each input kind to match what a real Mac/Win
+	// machine exposes pre-permission. Users can override with the standard
+	// Camoufox config hooks if they need a different device topology.
+	if (!isDomainSet(config, "mediaDevices:")) {
+		setInto(config, "mediaDevices:enabled", true);
+		setInto(config, "mediaDevices:micros", 1);
+		setInto(config, "mediaDevices:webcams", 1);
+		setInto(config, "mediaDevices:speakers", 0);
+	}
+
 	// Pass the humanize option
 	if (humanize) {
 		setInto(config, "humanize", true);
