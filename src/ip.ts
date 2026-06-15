@@ -78,10 +78,10 @@ export function validateIP(ip: string): void {
 // per-call instances leak fds in long-running processes. Reuse instances
 // via a small LRU keyed by proxy URL; evicted entries are reclaimed by GC.
 const IMPIT_CACHE_MAX = 8;
-const impitCache = new Map<string, Impit>();
+const impitCache = new Map<string | undefined, Impit>();
 
 function getImpit(proxy?: string): Impit {
-	const key = proxy ?? "";
+	const key = proxy;
 	const cached = impitCache.get(key);
 	if (cached) {
 		impitCache.delete(key);
@@ -94,7 +94,7 @@ function getImpit(proxy?: string): Impit {
 	});
 	impitCache.set(key, impit);
 	if (impitCache.size > IMPIT_CACHE_MAX) {
-		impitCache.delete(impitCache.keys().next().value as string);
+		impitCache.delete(impitCache.keys().next().value);
 	}
 	return impit;
 }
