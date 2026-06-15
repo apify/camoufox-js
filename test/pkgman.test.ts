@@ -10,6 +10,7 @@ describe("INSTALL_DIR", () => {
 	});
 
 	test("defaults to the user cache dir", async () => {
+		vi.stubEnv("CAMOUFOX_INSTALL_DIR", "");
 		vi.resetModules();
 		const { INSTALL_DIR } = await import("../src/pkgman");
 		expect(INSTALL_DIR.toString()).toContain("camoufox");

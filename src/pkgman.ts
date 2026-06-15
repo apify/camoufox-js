@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import type { PathLike } from "node:fs";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -307,7 +307,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
 			this.setVersion();
 
 			if (OS_NAME !== "win") {
-				execSync(`chmod -R 755 ${INSTALL_DIR}`);
+				execFileSync("chmod", ["-R", "755", INSTALL_DIR.toString()]);
 			}
 
 			console.log("Camoufox successfully installed.");
