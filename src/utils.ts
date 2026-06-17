@@ -622,6 +622,19 @@ export async function launchOptions({
 	// Inject the fingerprint into the config
 	mergeInto(config, fromBrowserforge(fingerprint, ff_version_str));
 
+	// Add seeds (BrowserForge doesn't generate these). Mirrors fingerprints.py,
+	// which seeds these right after from_browserforge() with setdefault. Range is
+	// 1..2^32-1 — 0 is excluded because it's a no-op in the C++ managers. Without
+	// a per-launch audio:seed the AudioFingerprintManager defaults to 0, so every
+	// spoofed context returns identical audio samples — a "same machine behind
+	// many identities" tell on CreepJS. setInto is "set only if unset", so a
+	// caller-supplied seed wins (the JS equivalent of setdefault).
+	const randint = (min: number, max: number) =>
+		Math.floor(Math.random() * (max - min + 1)) + min;
+	setInto(config, "fonts:spacing_seed", randint(1, 4_294_967_295));
+	setInto(config, "audio:seed", randint(1, 4_294_967_295));
+	setInto(config, "canvas:seed", randint(1, 4_294_967_295));
+
 	const targetOS = getTargetOS(config);
 
 	// Set a random window.history.length
@@ -646,13 +659,6 @@ export async function launchOptions({
 	} else {
 		updateFonts(config, targetOS);
 	}
-
-	// Set a fixed font spacing seed
-	setInto(
-		config,
-		"fonts:spacing_seed",
-		Math.floor(Math.random() * 1_073_741_824),
-	);
 
 	// Handle proxy
 	const proxyUrl = getProxyUrl(proxy);
