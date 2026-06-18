@@ -72,10 +72,9 @@ jobs:
 
             -   name: Commit changes
                 id: commit
-                uses: EndBug/add-and-commit@v10
+                uses: apify/actions/signed-commit@v1.2.0
                 with:
-                    author_name: Apify Release Bot
-                    author_email: noreply@apify.com
+                    github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                     message: 'chore(release): Update package version [skip ci]'
                     pull: '--rebase --autostash'
 
