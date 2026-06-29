@@ -64,5 +64,24 @@ export async function NewBrowser<
 	}
 
 	const browser = await playwright.launch(fromOptions);
+
+	// Fix: Strip isMobile from Browser.setDefaultViewport CDP call
+	// Playwright 1.61+ sends isMobile which Camoufox's Firefox doesn't recognize
+	// See https://github.com/apify/camoufox-js/issues/299
+	if (browser && (browser as any)._connection) {
+		const conn = (browser as any)._connection;
+		const origSend = conn.sendMessageToServer.bind(conn);
+		conn.sendMessageToServer = async (msg: string) => {
+			try {
+				const parsed = JSON.parse(msg);
+				if (parsed.method === "Browser.setDefaultViewport" && parsed.params?.viewport?.isMobile !== undefined) {
+					const { isMobile, ...cleanViewport } = parsed.params.viewport;
+					parsed.params.viewport = cleanViewport;
+					return origSend(JSON.stringify(parsed));
+				}
+			} catch {}
+			return origSend(msg);
+		};
+	}
 	return syncAttachVD(browser, virtualDisplay);
 }
