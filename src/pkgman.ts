@@ -293,12 +293,12 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	async install(): Promise<void> {
 		await this.init();
 		await CamoufoxFetcher.cleanup();
+		// Set up outside the try so finally can always tear down the ~600MB staging dir.
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
+		const tempFilePath = path.join(tempDir, "camoufox.zip");
+		const tempFileStream = fs.createWriteStream(tempFilePath);
 		try {
 			fs.mkdirSync(INSTALL_DIR, { recursive: true });
-
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
-			const tempFilePath = path.join(tempDir, "camoufox.zip");
-			const tempFileStream = fs.createWriteStream(tempFilePath);
 
 			await webdl(this.url, "Downloading Camoufox...", true, tempFileStream);
 			await new Promise((r) => tempFileStream.close(r));
@@ -315,6 +315,19 @@ export class CamoufoxFetcher extends GitHubDownloader {
 			console.error(`Error installing Camoufox: ${e}`);
 			await CamoufoxFetcher.cleanup();
 			throw e;
+		} finally {
+			// Best-effort teardown: a throw here would mask the real result, and the caller is fire-and-forget.
+			try {
+				// Close before removing: Windows can't unlink a file with an open handle.
+				if (!tempFileStream.closed) {
+					await new Promise<void>((resolve) =>
+						tempFileStream.close(() => resolve()),
+					);
+				}
+				fs.rmSync(tempDir, { recursive: true, force: true });
+			} catch (cleanupErr) {
+				console.error(`Failed to remove staging dir ${tempDir}: ${cleanupErr}`);
+			}
 		}
 	}
 
