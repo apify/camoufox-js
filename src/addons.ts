@@ -91,6 +91,11 @@ export async function maybeDownloadAddons(
 			addonsList.push(addonPath);
 		} catch (e) {
 			console.error(`Failed to download and extract ${addonName}: ${e}`);
+			// Clean up the empty directory created before the download attempt.
+			// Without this, the next retry sees the directory and treats it as
+			// a successfully downloaded addon, then crashes with "manifest.json
+			// is missing" in confirmPaths.
+			fs.rmSync(addonPath, { recursive: true, force: true });
 		}
 	}
 }
