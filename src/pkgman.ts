@@ -191,6 +191,7 @@ export class GitHubDownloader {
 		const releases = await response.json();
 
 		for (const release of releases) {
+			if (release.prerelease || release.draft) continue;
 			for (const asset of release.assets) {
 				const data = this.checkAsset(asset);
 				if (data) {
