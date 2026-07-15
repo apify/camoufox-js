@@ -28,6 +28,29 @@ describe("INSTALL_DIR", () => {
 	});
 });
 
+describe("GitHubDownloader.getAsset", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	test("skips prerelease and draft releases", async () => {
+		const { GitHubDownloader } = await import("../src/pkgman");
+		const downloader = new GitHubDownloader("example/repo");
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => ({
+				ok: true,
+				json: async () => [
+					{ prerelease: true, assets: [{ browser_download_url: "bad-pre" }] },
+					{ draft: true, assets: [{ browser_download_url: "bad-draft" }] },
+					{ assets: [{ browser_download_url: "good" }] },
+				],
+			})),
+		);
+		await expect(downloader.getAsset()).resolves.toBe("good");
+	});
+});
+
 // A fetch that writes a few bytes then errors mid-stream, like a dropped connection.
 function failingFetch() {
 	return vi.fn(async () => ({
