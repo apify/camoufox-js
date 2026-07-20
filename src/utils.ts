@@ -637,6 +637,98 @@ export async function launchOptions({
 
 	const targetOS = getTargetOS(config);
 
+	// Force navigator.platform AND navigator.oscpu to match the UA's arch
+	// when BrowserForge ships a mismatched value. ~8% of Linux Firefox
+	// fingerprints in the pool report `Linux armv81` for either field while
+	// the UA says `Linux x86_64` — that arch mismatch is itself a CreepJS
+	// lie signal (CreepJS cross-checks oscpu, platform, and UA arch).
+	const ua = config["navigator.userAgent"] as string | undefined;
+	if (ua && targetOS === "lin") {
+		let target = "";
+		if (/Linux x86_64/.test(ua)) target = "Linux x86_64";
+		else if (/Linux i686/.test(ua)) target = "Linux i686";
+		if (target) {
+			if (config["navigator.platform"] !== target) {
+				config["navigator.platform"] = target;
+			}
+			if (config["navigator.oscpu"] !== target) {
+				config["navigator.oscpu"] = target;
+			}
+		}
+	}
+
+	// Ensure screen.availHeight < screen.height so CreepJS's
+	// `noTaskbar = (screen.height === screen.availHeight && screen.width ===
+	// screen.availWidth)` Like-Headless flag doesn't flip. Every desktop OS
+	// has some chrome (Mac menu bar ~25px, Win taskbar ~40px, Linux panel
+	// ~27px) that real users keep visible; the BrowserForge pool occasionally
+	// ships fingerprints with identical screen/avail values which leak as a
+	// headless tell. Sample equality rates: lin 80%, mac 48%, win 14%.
+	// Also clamp window.outerHeight (and innerHeight) to the new avail so we
+	// don't end up with a window taller than the available area, which would
+	// be its own leak.
+	{
+		const sw = config["screen.width"] as number | undefined;
+		const sh = config["screen.height"] as number | undefined;
+		const aw = config["screen.availWidth"] as number | undefined;
+		const ah = config["screen.availHeight"] as number | undefined;
+		if (sw && sh && aw === sw && ah === sh) {
+			const taskbar = targetOS === "win" ? 40 : targetOS === "mac" ? 25 : 27;
+			const newAvail = sh - taskbar;
+			config["screen.availHeight"] = newAvail;
+			const oh = config["window.outerHeight"] as number | undefined;
+			if (oh && oh > newAvail) {
+				const ih = config["window.innerHeight"] as number | undefined;
+				const chrome = ih ? oh - ih : 0;
+				config["window.outerHeight"] = newAvail;
+				if (ih) config["window.innerHeight"] = newAvail - chrome;
+			}
+		}
+	}
+
+	// Enforce the physical dimension hierarchy inner <= outer <= avail <=
+	// screen on BOTH axes. The browser faithfully reports whatever we inject,
+	// so a BrowserForge fingerprint that ships e.g. outerWidth > screen.width
+	// or innerWidth > outerWidth leaks as an impossible geometry. The noTaskbar
+	// block above only clamps height; this closes the width gaps (and re-checks
+	// height) by shrinking each level down to its container, preserving the
+	// chrome delta between outer and inner where possible.
+	{
+		for (const axis of ["Width", "Height"] as const) {
+			const screen = config[`screen.${axis.toLowerCase()}`] as
+				| number
+				| undefined;
+			const avail = config[`screen.avail${axis}`] as number | undefined;
+			const outer = config[`window.outer${axis}`] as number | undefined;
+			const inner = config[`window.inner${axis}`] as number | undefined;
+
+			// avail must not exceed screen
+			if (screen && avail && avail > screen) {
+				config[`screen.avail${axis}`] = screen;
+			}
+			const availClamped =
+				(config[`screen.avail${axis}`] as number | undefined) ?? screen;
+
+			// outer must not exceed avail (or screen if avail is unknown)
+			const outerCap = availClamped ?? screen;
+			if (outer && outerCap && outer > outerCap) {
+				const chrome = inner ? Math.max(0, outer - inner) : 0;
+				config[`window.outer${axis}`] = outerCap;
+				if (inner) {
+					config[`window.inner${axis}`] = Math.max(1, outerCap - chrome);
+				}
+			}
+
+			// inner must not exceed outer
+			const outerClamped =
+				(config[`window.outer${axis}`] as number | undefined) ?? outer;
+			const innerNow = config[`window.inner${axis}`] as number | undefined;
+			if (innerNow && outerClamped && innerNow > outerClamped) {
+				config[`window.inner${axis}`] = outerClamped;
+			}
+		}
+	}
+
 	// Set a random window.history.length
 	setInto(config, "window.history.length", Math.floor(Math.random() * 5) + 1);
 
@@ -681,15 +773,24 @@ export async function launchOptions({
 		}
 
 		const geolocation = await getGeolocation(geoip);
-		config = { ...config, ...geolocation.asConfig() };
+		// Fill geo fields the user didn't supply, but never overwrite ones
+		// they did. Manual config (timezone / geolocation:* / locale:*) is
+		// authoritative; geoip only fills the gaps. Every other geoip write
+		// in this block already uses setInto ("set only if unset") — this was
+		// the lone clobbering spread.
+		for (const [key, value] of Object.entries(geolocation.asConfig())) {
+			setInto(config, key, value);
+		}
 	}
 
 	// Raise a warning when a proxy is being used without spoofing geolocation.
 	// This is a very bad idea; the warning cannot be ignored with i_know_what_im_doing.
+	// A user-supplied timezone counts as driving geo ourselves, so don't warn
+	// when one is set (e.g. geo resolved from a cache rather than geoip).
 	if (
 		proxyUrl &&
 		!proxyUrl.hostname.includes("localhost") &&
-		!isDomainSet(config, "geolocation:")
+		!isDomainSet(config, "geolocation:", "timezone")
 	) {
 		LeakWarning.warn("proxy_without_geoip");
 	}
