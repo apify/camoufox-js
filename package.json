@@ -34,7 +34,7 @@
 		"better-sqlite3": "^13.0.1",
 		"cli-progress": "^3.12.0",
 		"commander": "^14.0.0",
-		"fingerprint-generator": "^2.1.66",
+		"fingerprint-generator": "^2.1.86",
 		"glob": "^13.0.0",
 		"impit": "^0.14.1",
 		"language-tags": "^2.0.1",
