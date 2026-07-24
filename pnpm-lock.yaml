@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  generative-bayesian-network: ^2.1.84
+
 importers:
 
   .:
@@ -323,10 +326,6 @@ packages:
   '@vitest/utils@4.1.4':
     resolution: {integrity: sha512-13QMT+eysM5uVGa1rG4kegGYNp6cnQcsTc67ELFbhNLQO+vgsygtYJx2khvdt4gVQqSSpC/KT5FZZxUpP3Oatw==}
 
-  adm-zip@0.5.17:
-    resolution: {integrity: sha512-+Ut8d9LLqwEvHHJl1+PIHqoyDxFgVN847JTVM3Izi3xHDWPE4UtzzXysMZQs64DMcrJfBeS/uoEP4AD3HQHnQQ==}
-    engines: {node: '>=12.0'}
-
   adm-zip@0.6.0:
     resolution: {integrity: sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==}
     engines: {node: '>=14.0'}
@@ -432,8 +431,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  generative-bayesian-network@2.1.82:
-    resolution: {integrity: sha512-DH4NrmQheoMaJErdVv2IzaqkbOYSDQZmiZTV6UPDJYRDK2EyPpIQ88XRcYdPeFrUjS1N0Jj25H3HUywoJ1dbow==}
+  generative-bayesian-network@2.1.84:
+    resolution: {integrity: sha512-mnERo6Sdt9zabjRXlTalw48PcH/577lsseRhCWMDdXdaAk9zZy5eQKHxHArS/I4Fv4L/PemriIY+p+d22m4wlA==}
 
   glob@13.0.6:
     resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
@@ -1042,8 +1041,6 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  adm-zip@0.5.17: {}
-
   adm-zip@0.6.0: {}
 
   ansi-regex@5.0.1: {}
@@ -1112,16 +1109,16 @@ snapshots:
 
   fingerprint-generator@2.1.82:
     dependencies:
-      generative-bayesian-network: 2.1.82
+      generative-bayesian-network: 2.1.84
       header-generator: 2.1.82
       tslib: 2.8.1
 
   fsevents@2.3.3:
     optional: true
 
-  generative-bayesian-network@2.1.82:
+  generative-bayesian-network@2.1.84:
     dependencies:
-      adm-zip: 0.5.17
+      adm-zip: 0.6.0
       tslib: 2.8.1
 
   glob@13.0.6:
@@ -1133,7 +1130,7 @@ snapshots:
   header-generator@2.1.82:
     dependencies:
       browserslist: 4.28.2
-      generative-bayesian-network: 2.1.82
+      generative-bayesian-network: 2.1.84
       ow: 0.28.2
       tslib: 2.8.1
 

@@ -65,5 +65,10 @@
 			"version": "10.33.4",
 			"onFail": "warn"
 		}
+	},
+	"pnpm": {
+		"overrides": {
+			"generative-bayesian-network": "^2.1.84"
+		}
 	}
 }
