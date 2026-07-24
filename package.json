@@ -51,13 +51,13 @@
 		"@types/language-tags": "^1.0.4",
 		"@types/node": "^24.0.0",
 		"@types/xml2js": "^0.4.14",
-		"playwright-core": "^1.53.1",
+		"playwright-core": "<1.61.0",
 		"rimraf": "^6.0.1",
 		"typescript": "^5.8.3",
 		"vitest": "^4.0.0"
 	},
 	"peerDependencies": {
-		"playwright-core": "*"
+		"playwright-core": "<1.61.0"
 	},
 	"devEngines": {
 		"packageManager": {
