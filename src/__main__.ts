@@ -89,9 +89,9 @@ program.command("fetch").action(async () => {
 	const updater = await CamoufoxUpdate.create();
 	await updater.update();
 	if (ALLOW_GEOIP) {
-		downloadMMDB();
+		await downloadMMDB();
 	}
-	maybeDownloadAddons(DefaultAddons);
+	await maybeDownloadAddons(DefaultAddons);
 });
 
 program.command("remove").action(async () => {
