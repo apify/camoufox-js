@@ -68,6 +68,18 @@ describe("launchOptions seeding", () => {
 		return path.join(dir, "camoufox-bin");
 	};
 
+	// Skipping an unsupported seed is silent, so if a seed were ever renamed
+	// upstream we would quietly stop seeding it. Pin the names against the
+	// installed browser's schema so that shows up as a failure instead.
+	test("the installed browser declares every seed we set", () => {
+		const properties: { property: string; type: string }[] = JSON.parse(
+			fs.readFileSync(getPath("properties.json"), "utf-8"),
+		);
+		for (const seed of ["fonts:spacing_seed", "audio:seed", "canvas:seed"]) {
+			expect(properties).toContainEqual({ property: seed, type: "uint" });
+		}
+	});
+
 	test("seeds all three properties on a supported browser", async () => {
 		const { env } = await launchOptions({ headless: true });
 		expect(Object.keys(readConfig(env))).toEqual(
