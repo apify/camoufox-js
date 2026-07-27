@@ -511,7 +511,7 @@ export async function unzip(
 		if (bar) {
 			console.log(`Extracting ${entry.entryName}`);
 		}
-		zip.extractEntryTo(entry, extractPath, false, true);
+		zip.extractEntryTo(entry, extractPath, true, true);
 	}
 
 	if (bar) {
