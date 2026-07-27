@@ -195,8 +195,29 @@ export async function downloadMMDB(): Promise<void> {
 
 	const assetUrl = await new MaxMindDownloader(MMDB_REPO).getAsset();
 
-	const fileStream = fs.createWriteStream(MMDB_FILE);
-	await webdl(assetUrl, "Downloading GeoIP database", true, fileStream);
+	// Download into a temporary file and only move it into place once the
+	// download finished. Writing straight to MMDB_FILE leaves an empty or
+	// truncated database behind when the download fails, and getGeolocation()
+	// only checks that the file exists - so every later run would pick up the
+	// corrupt file and fail until it is removed by hand.
+	const tempFile = `${MMDB_FILE}.${process.pid}.download`;
+	const fileStream = fs.createWriteStream(tempFile);
+	try {
+		await webdl(assetUrl, "Downloading GeoIP database", true, fileStream);
+		// Flush and close before renaming, otherwise the database can be opened
+		// while the last chunks are still buffered.
+		await new Promise<void>((resolve, reject) =>
+			fileStream.close((err) => (err ? reject(err) : resolve())),
+		);
+		fs.renameSync(tempFile, MMDB_FILE);
+	} catch (e) {
+		// Close before removing: Windows can't unlink a file with an open handle.
+		if (!fileStream.closed) {
+			await new Promise<void>((resolve) => fileStream.close(() => resolve()));
+		}
+		fs.rmSync(tempFile, { force: true });
+		throw e;
+	}
 }
 
 export function removeMMDB(): void {
