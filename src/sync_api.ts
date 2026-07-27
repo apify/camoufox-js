@@ -5,7 +5,13 @@ import {
 	firefox,
 } from "playwright-core";
 
-import { type LaunchOptions, launchOptions, syncAttachVD } from "./utils.js";
+import {
+	attachNoViewportDefault,
+	type LaunchOptions,
+	launchOptions,
+	spoofsWindowDimensions,
+	syncAttachVD,
+} from "./utils.js";
 import { VirtualDisplay } from "./virtdisplay.js";
 
 export async function Camoufox<
@@ -55,7 +61,12 @@ export async function NewBrowser<
 		});
 	}
 
+	const noViewportDefault = spoofsWindowDimensions(fromOptions);
+
 	if (typeof userDataDir === "string") {
+		if (noViewportDefault && !("viewport" in fromOptions)) {
+			fromOptions = { ...fromOptions, viewport: null };
+		}
 		const context = await playwright.launchPersistentContext(
 			userDataDir,
 			fromOptions,
@@ -64,5 +75,8 @@ export async function NewBrowser<
 	}
 
 	const browser = await playwright.launch(fromOptions);
+	if (noViewportDefault) {
+		attachNoViewportDefault(browser);
+	}
 	return syncAttachVD(browser, virtualDisplay);
 }

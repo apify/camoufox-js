@@ -306,6 +306,65 @@ function warnManualConfig(config: Record<string, any>): void {
 	}
 }
 
+const WINDOW_DIM_KEYS = [
+	"window.outerWidth",
+	"window.outerHeight",
+	"window.innerWidth",
+	"window.innerHeight",
+	"document.body.clientWidth",
+	"document.body.clientHeight",
+];
+
+/**
+ * Whether the CAMOU_CONFIG in a set of launch options spoofs any window
+ * dimension. The config is chunked across CAMOU_CONFIG_<n> env vars, so
+ * reassemble it in index order before looking.
+ */
+export function spoofsWindowDimensions(
+	fromOptions: Record<string, any>,
+): boolean {
+	const env: Record<string, string> = fromOptions.env ?? {};
+	const chunks = Object.entries(env)
+		.filter(([key]) => key.startsWith("CAMOU_CONFIG_"))
+		.map(([key, value]) => [Number(key.split("_").pop()), value] as const)
+		.sort(([a], [b]) => a - b);
+	if (chunks.length === 0) {
+		return false;
+	}
+	const blob = chunks.map(([, value]) => value).join("");
+	return WINDOW_DIM_KEYS.some((key) => blob.includes(key));
+}
+
+/**
+ * Defaults newPage()/newContext() to `viewport: null`.
+ *
+ * Playwright applies a 1280x720 viewport by default, which makes Juggler ask
+ * the content window to become 1280x720. When Camoufox is pinning the window to
+ * a spoofed size, that request can never be satisfied, so the page reports the
+ * Playwright viewport instead of the spoofed dimensions (and a second
+ * newPage() can hang - daijro/camoufox#666).
+ *
+ * Without a viewport, Juggler measures the window instead of resizing it.
+ * An explicit viewport from the caller always wins.
+ */
+export function attachNoViewportDefault<T>(target: T): T {
+	for (const name of ["newPage", "newContext"] as const) {
+		const original = (target as any)[name];
+		if (typeof original !== "function") {
+			continue;
+		}
+		(target as any)[name] = (options?: Record<string, any>, ...rest: any[]) =>
+			original.call(
+				target,
+				options && "viewport" in options
+					? options
+					: { ...options, viewport: null },
+				...rest,
+			);
+	}
+	return target;
+}
+
 async function _asyncAttachVD(
 	browser: any,
 	virtualDisplay?: VirtualDisplay,
