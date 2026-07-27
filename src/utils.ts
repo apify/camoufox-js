@@ -124,10 +124,8 @@ interface EnvVars {
 
 function validateConfig(
 	configMap: Record<string, string>,
-	path?: PathLike,
+	propertyTypes: Record<string, string>,
 ): void {
-	const propertyTypes = loadProperties(path);
-
 	for (const [key, value] of Object.entries(configMap)) {
 		const expectedType = propertyTypes[key];
 		if (!expectedType) {
@@ -628,12 +626,17 @@ export async function launchOptions({
 	// a per-launch audio:seed the AudioFingerprintManager defaults to 0, so every
 	// spoofed context returns identical audio samples — a "same machine behind
 	// many identities" tell on CreepJS. setInto is "set only if unset", so a
-	// caller-supplied seed wins (the JS equivalent of setdefault).
+	// caller-supplied seed wins (the JS equivalent of setdefault). audio:seed and
+	// canvas:seed only exist since Camoufox 2.0, and the library supports older
+	// builds, so seed only what the installed browser's schema knows.
 	const randint = (min: number, max: number) =>
 		Math.floor(Math.random() * (max - min + 1)) + min;
-	setInto(config, "fonts:spacing_seed", randint(1, 4_294_967_295));
-	setInto(config, "audio:seed", randint(1, 4_294_967_295));
-	setInto(config, "canvas:seed", randint(1, 4_294_967_295));
+	const knownProperties = loadProperties(executable_path);
+	for (const seed of ["fonts:spacing_seed", "audio:seed", "canvas:seed"]) {
+		if (seed in knownProperties) {
+			setInto(config, seed, randint(1, 4_294_967_295));
+		}
+	}
 
 	const targetOS = getTargetOS(config);
 
@@ -767,7 +770,7 @@ export async function launchOptions({
 	}
 
 	// Validate the config
-	validateConfig(config, executable_path);
+	validateConfig(config, knownProperties);
 
 	//Prepare environment variables to pass to Camoufox
 	const env_vars = {
