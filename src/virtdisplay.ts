@@ -137,11 +137,32 @@ export class VirtualDisplay {
 	}
 
 	public kill(): void {
-		if (this.proc && this.proc.exitCode === null && !this.proc.killed) {
-			if (this.debug) {
-				console.log("Terminating virtual display:", this._display);
+		if (this.proc) {
+			// Kill regardless of exitCode/signal state.
+			// When the browser process crashes (SIGSEGV), exitCode is null
+			// but the process is gone. The original check
+			// (exitCode === null && !killed) only killed if the process
+			// hadn't exited yet — crashed processes were left orphaned,
+			// leaking Xvfb displays.
+			if (!this.proc.killed) {
+				if (this.debug) {
+					console.log(
+						"Terminating virtual display:",
+						this._display,
+						this.proc.exitCode !== null
+							? `(already exited code=${this.proc.exitCode})`
+							: this.proc.signalCode
+								? `(already exited signal=${this.proc.signalCode})`
+								: "",
+					);
+				}
+				try {
+					this.proc.kill();
+				} catch {
+					// Process may have already exited between our check and kill
+				}
 			}
-			this.proc.kill();
+			this.proc = null;
 		}
 	}
 
