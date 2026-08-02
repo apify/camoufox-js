@@ -2,7 +2,7 @@
 // from screeninfo import get_monitors
 // from ua_parser import user_agent_parser
 
-import { type PathLike, readFileSync } from "node:fs";
+import { type PathLike, readFileSync, existsSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import type {
 	Fingerprint,
@@ -417,6 +417,33 @@ export function syncAttachVD(
 	browser._virtualDisplay = virtualDisplay;
 
 	return browser;
+}
+
+/**
+ * Remove stale Firefox lock files from a profile directory.
+ *
+ * When the browser process crashes (SIGSEGV, OOM, unclean exit), it leaves
+ * `lock` and `.parentlock` files in the user data directory. These prevent
+ * a new browser from launching for the same profile — the launch appears
+ * to succeed but the browser immediately closes with "persistent context
+ * closed" and no crash trace.
+ *
+ * This should be called before `launchPersistentContext` to ensure a clean
+ * state. Safe to call even if no lock files exist.
+ */
+export function cleanStaleLockFiles(userDataDir: string): void {
+	const lockFiles = ["lock", ".parentlock"];
+	for (const file of lockFiles) {
+		const lockPath = path.join(userDataDir, file);
+		if (existsSync(lockPath)) {
+			try {
+				unlinkSync(lockPath);
+			} catch {
+				// Best-effort — if we can't remove it, the launch will fail
+				// with a clear error rather than a silent hang
+			}
+		}
+	}
 }
 
 export interface LaunchOptions {
