@@ -68,8 +68,10 @@ export async function NewBrowser<
 		if (noViewportDefault && !("viewport" in fromOptions)) {
 			fromOptions = { ...fromOptions, viewport: null };
 		}
-		// Clean up stale lock files from previous crashed sessions
-		cleanStaleLockFiles(userDataDir);
+		// Clean up stale lock files from previous crashed sessions (opt-in)
+		if (launch_options.clean_stale_locks) {
+			cleanStaleLockFiles(userDataDir);
+		}
 		const context = await playwright.launchPersistentContext(
 			userDataDir,
 			fromOptions,

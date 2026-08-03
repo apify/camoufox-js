@@ -2,7 +2,7 @@
 // from screeninfo import get_monitors
 // from ua_parser import user_agent_parser
 
-import { type PathLike, readFileSync, existsSync, unlinkSync } from "node:fs";
+import { type PathLike, readFileSync, lstatSync, rmSync } from "node:fs";
 import path from "node:path";
 import type {
 	Fingerprint,
@@ -428,6 +428,11 @@ export function syncAttachVD(
  * to succeed but the browser immediately closes with "persistent context
  * closed" and no crash trace.
  *
+ * Firefox's `lock` and `.parentlock` are symlinks whose target encodes the
+ * holding process as `<host>:+<pid>`. We only remove a lock if the pid is
+ * dead — removing a live process's lock creates a new inode and causes
+ * two instances to share one profile silently.
+ *
  * This should be called before `launchPersistentContext` to ensure a clean
  * state. Safe to call even if no lock files exist.
  */
@@ -435,14 +440,54 @@ export function cleanStaleLockFiles(userDataDir: string): void {
 	const lockFiles = ["lock", ".parentlock"];
 	for (const file of lockFiles) {
 		const lockPath = path.join(userDataDir, file);
-		if (existsSync(lockPath)) {
-			try {
-				unlinkSync(lockPath);
-			} catch {
-				// Best-effort — if we can't remove it, the launch will fail
-				// with a clear error rather than a silent hang
-			}
+		let stat;
+		try {
+			stat = lstatSync(lockPath);
+		} catch {
+			continue; // doesn't exist — skip
 		}
+
+		// If it's a symlink, check whether the holding pid is still alive.
+		if (stat.isSymbolicLink()) {
+			let target: string;
+			try {
+				target = readFileSync(lockPath, "utf-8");
+			} catch {
+				continue;
+			}
+			// Target format: "<host>:+<pid>"
+			const match = target.match(/\+(\d+)$/);
+			if (match) {
+				const pid = parseInt(match[1], 10);
+				if (isProcessAlive(pid)) {
+					// The lock holder is still running — do NOT remove.
+					continue;
+				}
+			}
+			// If we can't parse the pid, fall through and remove anyway.
+			// A lock with an unparseable target is already broken.
+		}
+
+		try {
+			rmSync(lockPath, { force: true });
+		} catch {
+			// Best-effort — if we can't remove it, the launch will fail
+			// with a clear error rather than a silent hang
+		}
+	}
+}
+
+/**
+ * Check whether a process with the given pid is still alive.
+ * Uses process.kill(pid, 0) which throws ESRCH if the process doesn't exist.
+ */
+function isProcessAlive(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (err: any) {
+		// ESRCH = no such process. EPERM = exists but not ours — treat as alive.
+		return err.code === "EPERM";
 	}
 }
 
@@ -547,6 +592,14 @@ export interface LaunchOptions {
 
 	/** Use a specific WebGL vendor/renderer pair. Passed as a tuple of `[vendor, renderer]`. */
 	webgl_config?: [string, string];
+
+	/** Clean stale Firefox lock files before launching a persistent context.
+	 * When enabled, checks the profile directory for leftover `lock` / `.parentlock`
+	 * files from a previous crashed session and removes them if the holding pid
+	 * is dead. Safe to leave enabled — live processes are never touched.
+	 * Default: false (opt-in).
+	 */
+	clean_stale_locks?: boolean;
 
 	/** Additional Firefox launch options. */
 	[key: string]: any;
