@@ -395,12 +395,26 @@ export function syncAttachVD(
 	virtualDisplay?: VirtualDisplay | null,
 ): any {
 	/**
-	 * Attaches the virtual display to the sync browser cleanup
+	 * Attaches the virtual display to the sync browser cleanup.
+	 *
+	 * Xvfb is spawned detached, so it outlives the Node process. If the
+	 * browser process crashes (SIGSEGV) or the WebSocket disconnects,
+	 * browser.close() may never be called, leaking the display. We
+	 * register on both the close override AND the disconnct/close events
+	 * to cover the crash path.
 	 */
 	if (!virtualDisplay) {
 		// Skip if no virtual display is provided
 		return browser;
 	}
+
+	let killed = false;
+	const killVD = () => {
+		if (!killed) {
+			killed = true;
+			virtualDisplay.kill();
+		}
+	};
 
 	const originalClose = browser.close.bind(browser);
 
@@ -408,11 +422,14 @@ export function syncAttachVD(
 		try {
 			return await originalClose(...args);
 		} finally {
-			if (virtualDisplay) {
-				virtualDisplay.kill();
-			}
+			killVD();
 		}
 	};
+
+	// Cover the crash/disconnect path: if the browser process dies or
+	// the connection drops, kill Xvfb before it leaks.
+	browser.on?.("disconnected", killVD);
+	browser.on?.("close", killVD);
 
 	browser._virtualDisplay = virtualDisplay;
 
