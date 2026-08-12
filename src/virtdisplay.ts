@@ -1,5 +1,5 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
-import { accessSync, constants as fsConstants } from "node:fs";
+import { accessSync, constants as fsConstants, unlinkSync } from "node:fs";
 import type { Readable } from "node:stream";
 import {
 	CannotExecuteXvfb,
@@ -137,12 +137,25 @@ export class VirtualDisplay {
 	}
 
 	public kill(): void {
-		if (this.proc && this.proc.exitCode === null && !this.proc.killed) {
-			if (this.debug) {
-				console.log("Terminating virtual display:", this._display);
-			}
-			this.proc.kill();
+		const proc = this.proc;
+		const display = this._display;
+		if (!proc || proc.exitCode !== null || proc.killed) return;
+		if (this.debug) {
+			console.log("Terminating virtual display:", display);
 		}
+		proc.once("exit", () => {
+			try {
+				unlinkSync(`/tmp/.X${display}-lock`);
+			} catch {
+				// already gone
+			}
+			try {
+				unlinkSync(`/tmp/.X11-unix/X${display}`);
+			} catch {
+				// already gone
+			}
+		});
+		proc.kill("SIGKILL");
 	}
 
 	private static assert_linux(): void {

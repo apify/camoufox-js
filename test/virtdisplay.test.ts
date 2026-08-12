@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, test } from "vitest";
 import { VirtualDisplay } from "../src/virtdisplay";
@@ -32,14 +33,31 @@ function killAllTracked(): void {
 // Reach into the private proc to inspect process liveness — needed to
 // assert kill() actually terminated Xvfb.
 function procOf(vd: VirtualDisplay) {
-	return (vd as unknown as { proc: { exitCode: number | null; pid?: number } })
-		.proc;
+	return (
+		vd as unknown as {
+			proc: {
+				exitCode: number | null;
+				signalCode: string | null;
+				pid?: number;
+			};
+		}
+	).proc;
+}
+
+// kill() sends SIGKILL, which is uncatchable -- Xvfb never gets to call its
+// own exit(), so Node reports signalCode, not a numeric exitCode. Either one
+// being set means the process has exited.
+function hasExited(proc: {
+	exitCode: number | null;
+	signalCode: string | null;
+}) {
+	return proc.exitCode !== null || proc.signalCode !== null;
 }
 
 async function waitForExit(vd: VirtualDisplay, timeoutMs = 5_000) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
-		if (procOf(vd).exitCode !== null) return;
+		if (hasExited(procOf(vd))) return;
 		await sleep(25);
 	}
 }
@@ -58,7 +76,7 @@ describe.skipIf(process.platform !== "linux")("VirtualDisplay", () => {
 		vd.kill();
 		await waitForExit(vd);
 		tracked.delete(vd);
-		expect(procOf(vd).exitCode).not.toBeNull();
+		expect(hasExited(procOf(vd))).toBe(true);
 	}, 15_000);
 
 	test("get() is idempotent within one VirtualDisplay", async () => {
@@ -100,12 +118,28 @@ describe.skipIf(process.platform !== "linux")("VirtualDisplay", () => {
 			tracked.clear();
 
 			for (const vd of vds) {
-				expect(procOf(vd).exitCode).not.toBeNull();
+				expect(hasExited(procOf(vd))).toBe(true);
 			}
 		},
 		// Spawning thousands of Xvfb processes is genuinely slow.
 		Math.max(5_000, N * 200),
 	);
+
+	test("kill() removes the X11 socket and lock file", async () => {
+		const vd = track(new VirtualDisplay());
+		const display = await vd.get();
+		const n = display.slice(1);
+		const socketPath = `/tmp/.X11-unix/X${n}`;
+		const lockPath = `/tmp/.X${n}-lock`;
+		expect(existsSync(socketPath)).toBe(true);
+
+		vd.kill();
+		await waitForExit(vd);
+		tracked.delete(vd);
+
+		expect(existsSync(socketPath)).toBe(false);
+		expect(existsSync(lockPath)).toBe(false);
+	}, 15_000);
 
 	test("released display numbers can be reused on the next launch", async () => {
 		const a = track(new VirtualDisplay());
