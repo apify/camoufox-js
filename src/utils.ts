@@ -729,8 +729,10 @@ export async function launchOptions({
 	if (geoip) {
 		geoipAllowed();
 
-		// Find the user's IP address
-		geoip = await publicIP(proxyUrl?.href);
+		// Use provided IP directly, or resolve the public IP via the proxy if provided
+		if (typeof geoip !== "string") {
+			geoip = await publicIP(proxyUrl?.href);
+		}
 
 		// Spoof WebRTC if not blocked
 		if (!block_webrtc) {
