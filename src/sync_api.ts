@@ -11,6 +11,7 @@ import {
 	launchOptions,
 	spoofsWindowDimensions,
 	syncAttachVD,
+	cleanStaleLockFiles,
 } from "./utils.js";
 import { VirtualDisplay } from "./virtdisplay.js";
 
@@ -66,6 +67,10 @@ export async function NewBrowser<
 	if (typeof userDataDir === "string") {
 		if (noViewportDefault && !("viewport" in fromOptions)) {
 			fromOptions = { ...fromOptions, viewport: null };
+		}
+		// Clean up stale lock files from previous crashed sessions (opt-in)
+		if (launch_options.clean_stale_locks) {
+			cleanStaleLockFiles(userDataDir);
 		}
 		const context = await playwright.launchPersistentContext(
 			userDataDir,
