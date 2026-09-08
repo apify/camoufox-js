@@ -65,5 +65,10 @@
 			"version": "10.33.4",
 			"onFail": "warn"
 		}
+	},
+	"pnpm": {
+		"overrides": {
+			"vite": ">=8.0.16"
+		}
 	}
 }
