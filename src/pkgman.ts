@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import cliProgress, { Options } from "cli-progress";
+import cliProgress, { type Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
