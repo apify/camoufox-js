@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import cliProgress, { Options } from "cli-progress";
+import cliProgress, { type Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
@@ -294,16 +294,46 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		);
 	}
 
+	// Remove staging/backup dirs left behind by an interrupted install.
+	private static removeLeftovers(installDir: string): void {
+		const parent = path.dirname(installDir);
+		const base = path.basename(installDir);
+		for (const name of fs.readdirSync(parent)) {
+			if (
+				name.startsWith(`${base}.staging-`) ||
+				name.startsWith(`${base}.old-`)
+			) {
+				fs.rmSync(path.join(parent, name), { recursive: true, force: true });
+			}
+		}
+	}
+
+	// Swap the staged install in; restore the previous one if that fails.
+	private static swapIn(stagingDir: string, installDir: string): void {
+		const backupDir = fs.existsSync(installDir)
+			? `${installDir}.old-${process.pid}`
+			: undefined;
+		if (backupDir) fs.renameSync(installDir, backupDir);
+		try {
+			fs.renameSync(stagingDir, installDir);
+		} catch (e) {
+			if (backupDir) fs.renameSync(backupDir, installDir);
+			throw e;
+		}
+		if (backupDir) fs.rmSync(backupDir, { recursive: true, force: true });
+	}
+
 	async install(): Promise<void> {
 		await this.init();
-		// Set up outside the try so finally can always tear down the ~600MB staging dir.
+		const installDir = INSTALL_DIR.toString();
+		fs.mkdirSync(path.dirname(installDir), { recursive: true });
+		CamoufoxFetcher.removeLeftovers(installDir);
+		// Staged next to INSTALL_DIR so the final rename stays on one filesystem.
+		// Set up outside the try so finally can always tear down the ~600MB staging dirs.
+		const stagingDir = fs.mkdtempSync(`${installDir}.staging-`);
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
 		const tempFilePath = path.join(tempDir, "camoufox.zip");
 		const tempFileStream = fs.createWriteStream(tempFilePath);
-		// Staged next to INSTALL_DIR so the final rename stays on one filesystem.
-		const installDir = INSTALL_DIR.toString();
-		fs.mkdirSync(path.dirname(installDir), { recursive: true });
-		const stagingDir = fs.mkdtempSync(`${installDir}.staging-`);
 		try {
 			await webdl(this.url, "Downloading Camoufox...", true, tempFileStream);
 			await new Promise((r) => tempFileStream.close(r));
@@ -315,9 +345,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
 				execFileSync("chmod", ["-R", "755", stagingDir]);
 			}
 
-			// Replace the previous install only once the new one is complete.
-			CamoufoxFetcher.cleanup();
-			fs.renameSync(stagingDir, installDir);
+			CamoufoxFetcher.swapIn(stagingDir, installDir);
 
 			console.log("Camoufox successfully installed.");
 		} catch (e) {
@@ -390,8 +418,12 @@ function userCacheDir(appName: string): string {
 	} else if (OS_NAME === "mac") {
 		return path.join(os.homedir(), "Library", "Caches", appName);
 	} else {
-		const xdg = process.env.XDG_CACHE_HOME?.trim();
-		return path.join(xdg || path.join(os.homedir(), ".cache"), appName);
+		// Per the XDG spec a relative XDG_CACHE_HOME is invalid and ignored.
+		const xdg = process.env.XDG_CACHE_HOME;
+		return path.join(
+			xdg && path.isAbsolute(xdg) ? xdg : path.join(os.homedir(), ".cache"),
+			appName,
+		);
 	}
 }
 
