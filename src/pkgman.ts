@@ -271,9 +271,12 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		return Buffer.from(await response.arrayBuffer());
 	}
 
-	async extractZip(zipFile: string | Buffer): Promise<void> {
+	async extractZip(
+		zipFile: string | Buffer,
+		destDir: string = INSTALL_DIR.toString(),
+	): Promise<void> {
 		const zip = new AdmZip(zipFile);
-		zip.extractAllTo(INSTALL_DIR.toString(), true);
+		zip.extractAllTo(destDir, true);
 	}
 
 	static cleanup(): boolean {
@@ -284,37 +287,41 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		return false;
 	}
 
-	setVersion(): void {
+	setVersion(destDir: string = INSTALL_DIR.toString()): void {
 		fs.writeFileSync(
-			path.join(INSTALL_DIR.toString(), "version.json"),
+			path.join(destDir, "version.json"),
 			JSON.stringify({ version: this.version, release: this.release }),
 		);
 	}
 
 	async install(): Promise<void> {
 		await this.init();
-		await CamoufoxFetcher.cleanup();
 		// Set up outside the try so finally can always tear down the ~600MB staging dir.
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
 		const tempFilePath = path.join(tempDir, "camoufox.zip");
 		const tempFileStream = fs.createWriteStream(tempFilePath);
+		// Staged next to INSTALL_DIR so the final rename stays on one filesystem.
+		const installDir = INSTALL_DIR.toString();
+		fs.mkdirSync(path.dirname(installDir), { recursive: true });
+		const stagingDir = fs.mkdtempSync(`${installDir}.staging-`);
 		try {
-			fs.mkdirSync(INSTALL_DIR, { recursive: true });
-
 			await webdl(this.url, "Downloading Camoufox...", true, tempFileStream);
 			await new Promise((r) => tempFileStream.close(r));
 
-			await this.extractZip(tempFilePath);
-			this.setVersion();
+			await this.extractZip(tempFilePath, stagingDir);
+			this.setVersion(stagingDir);
 
 			if (OS_NAME !== "win") {
-				execFileSync("chmod", ["-R", "755", INSTALL_DIR.toString()]);
+				execFileSync("chmod", ["-R", "755", stagingDir]);
 			}
+
+			// Replace the previous install only once the new one is complete.
+			CamoufoxFetcher.cleanup();
+			fs.renameSync(stagingDir, installDir);
 
 			console.log("Camoufox successfully installed.");
 		} catch (e) {
 			console.error(`Error installing Camoufox: ${e}`);
-			await CamoufoxFetcher.cleanup();
 			throw e;
 		} finally {
 			// Best-effort teardown: a throw here would mask the real result, and the caller is fire-and-forget.
@@ -326,8 +333,9 @@ export class CamoufoxFetcher extends GitHubDownloader {
 					);
 				}
 				fs.rmSync(tempDir, { recursive: true, force: true });
+				fs.rmSync(stagingDir, { recursive: true, force: true });
 			} catch (cleanupErr) {
-				console.error(`Failed to remove staging dir ${tempDir}: ${cleanupErr}`);
+				console.error(`Failed to remove staging dir: ${cleanupErr}`);
 			}
 		}
 	}
@@ -382,7 +390,8 @@ function userCacheDir(appName: string): string {
 	} else if (OS_NAME === "mac") {
 		return path.join(os.homedir(), "Library", "Caches", appName);
 	} else {
-		return path.join(os.homedir(), ".cache", appName);
+		const xdg = process.env.XDG_CACHE_HOME?.trim();
+		return path.join(xdg || path.join(os.homedir(), ".cache"), appName);
 	}
 }
 

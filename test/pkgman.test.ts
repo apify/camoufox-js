@@ -19,6 +19,15 @@ describe("INSTALL_DIR", () => {
 		expect(path.isAbsolute(INSTALL_DIR.toString())).toBe(true);
 	});
 
+	test("honors XDG_CACHE_HOME on Linux", async () => {
+		if (process.platform !== "linux") return;
+		vi.stubEnv("CAMOUFOX_INSTALL_DIR", "");
+		vi.stubEnv("XDG_CACHE_HOME", "/xdg-cache");
+		vi.resetModules();
+		const { INSTALL_DIR } = await import("../src/pkgman");
+		expect(INSTALL_DIR).toBe(path.join("/xdg-cache", "camoufox"));
+	});
+
 	test("CAMOUFOX_INSTALL_DIR overrides the install location", async () => {
 		const target = path.join("custom", "camoufox-install");
 		vi.stubEnv("CAMOUFOX_INSTALL_DIR", target);
@@ -99,11 +108,12 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	});
 
-	// Staging dirs install() creates: <tmpdir>/camoufox-<6 random chars>.
+	// Staging dirs install() creates: <tmpdir>/camoufox-<6 random chars>
+	// and <install dir>.staging-<6 random chars>.
 	function stagingDirs(): string[] {
 		return fs
 			.readdirSync(tmp)
-			.filter((n) => /^camoufox-[A-Za-z0-9]{6}$/.test(n));
+			.filter((n) => /^(camoufox-|install\.staging-)[A-Za-z0-9]{6}$/.test(n));
 	}
 
 	async function installWith(fetchImpl: ReturnType<typeof vi.fn>) {
@@ -122,17 +132,24 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		return fetcher;
 	}
 
-	test("removes the staging dir when the download fails", async () => {
+	test("keeps the previous install when the download fails", async () => {
+		const marker = path.join(installDir, "version.json");
+		fs.writeFileSync(marker, "{}");
 		const fetcher = await installWith(failingFetch());
 		// The original download error must survive, and no staging dir is left.
 		await expect(fetcher.install()).rejects.toThrow("connection reset");
 		expect(stagingDirs()).toEqual([]);
+		expect(fs.existsSync(marker)).toBe(true);
 	});
 
-	test("removes the staging dir after a successful install", async () => {
+	test("replaces the previous install after a successful install", async () => {
+		const marker = path.join(installDir, "old-file");
+		fs.writeFileSync(marker, "");
 		const fetcher = await installWith(succeedingFetch());
 		// A successful install must resolve (not throw) and leave no staging dir.
 		await expect(fetcher.install()).resolves.toBeUndefined();
 		expect(stagingDirs()).toEqual([]);
+		expect(fs.existsSync(installDir)).toBe(true);
+		expect(fs.existsSync(marker)).toBe(false);
 	});
 });

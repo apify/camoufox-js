@@ -9,7 +9,7 @@ npm install camoufox-js
 ```
 
 The Camoufox browser itself is downloaded with `npx camoufox-js fetch` into the
-per-user cache directory (`~/.cache/camoufox` on Linux). Set the
+per-user cache directory (`$XDG_CACHE_HOME/camoufox` or `~/.cache/camoufox` on Linux). Set the
 `CAMOUFOX_INSTALL_DIR` environment variable to install and resolve it from a
 custom location instead — useful in containers and CI images where the home
 directory is ephemeral or persisted separately (similar to Playwright's
