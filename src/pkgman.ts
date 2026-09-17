@@ -294,37 +294,15 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		);
 	}
 
-	// Remove staging/backup dirs left behind by an interrupted install.
-	// A backup whose install dir is missing is the only valid copy: restore it.
+	// Remove staging dirs left behind by an interrupted install.
 	private static removeLeftovers(installDir: string): void {
 		const parent = path.dirname(installDir);
-		const base = path.basename(installDir);
+		const prefix = `${path.basename(installDir)}.staging-`;
 		for (const name of fs.readdirSync(parent)) {
-			const full = path.join(parent, name);
-			if (name.startsWith(`${base}.old-`) && !fs.existsSync(installDir)) {
-				fs.renameSync(full, installDir);
-			} else if (
-				name.startsWith(`${base}.staging-`) ||
-				name.startsWith(`${base}.old-`)
-			) {
-				fs.rmSync(full, { recursive: true, force: true });
+			if (name.startsWith(prefix)) {
+				fs.rmSync(path.join(parent, name), { recursive: true, force: true });
 			}
 		}
-	}
-
-	// Swap the staged install in; restore the previous one if that fails.
-	private static swapIn(stagingDir: string, installDir: string): void {
-		const backupDir = fs.existsSync(installDir)
-			? `${installDir}.old-${process.pid}`
-			: undefined;
-		if (backupDir) fs.renameSync(installDir, backupDir);
-		try {
-			fs.renameSync(stagingDir, installDir);
-		} catch (e) {
-			if (backupDir) fs.renameSync(backupDir, installDir);
-			throw e;
-		}
-		if (backupDir) fs.rmSync(backupDir, { recursive: true, force: true });
 	}
 
 	async install(): Promise<void> {
@@ -335,7 +313,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
 			: INSTALL_DIR.toString();
 		fs.mkdirSync(path.dirname(installDir), { recursive: true });
 		CamoufoxFetcher.removeLeftovers(installDir);
-		// Staged next to INSTALL_DIR so the final rename stays on one filesystem.
+		// Staged next to the install dir so the final rename stays on one filesystem.
 		// Set up outside the try so finally can always tear down the ~600MB staging dirs.
 		const stagingDir = fs.mkdtempSync(`${installDir}.staging-`);
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
@@ -352,7 +330,9 @@ export class CamoufoxFetcher extends GitHubDownloader {
 				execFileSync("chmod", ["-R", "755", stagingDir]);
 			}
 
-			CamoufoxFetcher.swapIn(stagingDir, installDir);
+			// Replace the previous install only once the new one is complete.
+			fs.rmSync(installDir, { recursive: true, force: true });
+			fs.renameSync(stagingDir, installDir);
 
 			console.log("Camoufox successfully installed.");
 		} catch (e) {

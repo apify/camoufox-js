@@ -125,15 +125,13 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	});
 
-	// Dirs install() creates: <tmpdir>/camoufox-<6 random chars>,
-	// <install dir>.staging-<6 random chars> and <install dir>.old-<pid>.
+	// Dirs install() creates: <tmpdir>/camoufox-<6 random chars>
+	// and <install dir>.staging-<6 random chars>.
 	function stagingDirs(): string[] {
 		return fs
 			.readdirSync(tmp)
 			.filter((n) =>
-				/^(camoufox-[A-Za-z0-9]{6}|(install|target)\.(staging|old)-.+)$/.test(
-					n,
-				),
+				/^(camoufox-[A-Za-z0-9]{6}|(install|target)\.staging-.+)$/.test(n),
 			);
 	}
 
@@ -161,16 +159,6 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		expect(fs.existsSync(marker)).toBe(true);
 	});
 
-	test("restores a backup left behind when the install dir is missing", async () => {
-		fs.rmSync(installDir, { recursive: true });
-		fs.mkdirSync(path.join(tmp, "install.old-1"));
-		fs.writeFileSync(path.join(tmp, "install.old-1", "version.json"), "{}");
-		const fetcher = await installWith(failingFetch());
-		await expect(fetcher.install()).rejects.toThrow("connection reset");
-		expect(stagingDirs()).toEqual([]);
-		expect(fs.existsSync(path.join(installDir, "version.json"))).toBe(true);
-	});
-
 	test.skipIf(process.platform === "win32")(
 		"swaps the target of a symlinked install dir and keeps the link",
 		async () => {
@@ -195,7 +183,6 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		fs.writeFileSync(marker, "");
 		// Leftovers from an interrupted earlier install must be swept.
 		fs.mkdirSync(path.join(tmp, "install.staging-abc123"));
-		fs.mkdirSync(path.join(tmp, "install.old-1"));
 		const fetcher = await installWith(succeedingFetch());
 		// A successful install must resolve (not throw) and leave no staging dir.
 		await expect(fetcher.install()).resolves.toBeUndefined();
