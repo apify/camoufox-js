@@ -295,15 +295,19 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	}
 
 	// Remove staging/backup dirs left behind by an interrupted install.
+	// A backup whose install dir is missing is the only valid copy: restore it.
 	private static removeLeftovers(installDir: string): void {
 		const parent = path.dirname(installDir);
 		const base = path.basename(installDir);
 		for (const name of fs.readdirSync(parent)) {
-			if (
+			const full = path.join(parent, name);
+			if (name.startsWith(`${base}.old-`) && !fs.existsSync(installDir)) {
+				fs.renameSync(full, installDir);
+			} else if (
 				name.startsWith(`${base}.staging-`) ||
 				name.startsWith(`${base}.old-`)
 			) {
-				fs.rmSync(path.join(parent, name), { recursive: true, force: true });
+				fs.rmSync(full, { recursive: true, force: true });
 			}
 		}
 	}
@@ -325,7 +329,10 @@ export class CamoufoxFetcher extends GitHubDownloader {
 
 	async install(): Promise<void> {
 		await this.init();
-		const installDir = INSTALL_DIR.toString();
+		// Resolve a symlinked install dir so the swap replaces its target, not the link.
+		const installDir = fs.existsSync(INSTALL_DIR)
+			? fs.realpathSync(INSTALL_DIR)
+			: INSTALL_DIR.toString();
 		fs.mkdirSync(path.dirname(installDir), { recursive: true });
 		CamoufoxFetcher.removeLeftovers(installDir);
 		// Staged next to INSTALL_DIR so the final rename stays on one filesystem.

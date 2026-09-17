@@ -131,7 +131,9 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		return fs
 			.readdirSync(tmp)
 			.filter((n) =>
-				/^(camoufox-[A-Za-z0-9]{6}|install\.(staging|old)-.+)$/.test(n),
+				/^(camoufox-[A-Za-z0-9]{6}|(install|target)\.(staging|old)-.+)$/.test(
+					n,
+				),
 			);
 	}
 
@@ -158,6 +160,35 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		expect(stagingDirs()).toEqual([]);
 		expect(fs.existsSync(marker)).toBe(true);
 	});
+
+	test("restores a backup left behind when the install dir is missing", async () => {
+		fs.rmSync(installDir, { recursive: true });
+		fs.mkdirSync(path.join(tmp, "install.old-1"));
+		fs.writeFileSync(path.join(tmp, "install.old-1", "version.json"), "{}");
+		const fetcher = await installWith(failingFetch());
+		await expect(fetcher.install()).rejects.toThrow("connection reset");
+		expect(stagingDirs()).toEqual([]);
+		expect(fs.existsSync(path.join(installDir, "version.json"))).toBe(true);
+	});
+
+	test.skipIf(process.platform === "win32")(
+		"swaps the target of a symlinked install dir and keeps the link",
+		async () => {
+			const target = path.join(tmp, "target");
+			fs.mkdirSync(target);
+			fs.writeFileSync(path.join(target, "old-file"), "");
+			fs.rmSync(installDir, { recursive: true });
+			fs.symlinkSync(target, installDir);
+			const fetcher = await installWith(succeedingFetch());
+			await expect(fetcher.install()).resolves.toBeUndefined();
+			expect(stagingDirs()).toEqual([]);
+			expect(fs.lstatSync(installDir).isSymbolicLink()).toBe(true);
+			expect(fs.readdirSync(target).sort()).toEqual([
+				"camoufox",
+				"version.json",
+			]);
+		},
+	);
 
 	test("replaces the previous install after a successful install", async () => {
 		const marker = path.join(installDir, "old-file");
