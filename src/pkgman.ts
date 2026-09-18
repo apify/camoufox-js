@@ -7,7 +7,7 @@ import type { Writable } from "node:stream";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import AdmZip from "adm-zip";
-import cliProgress, { Options } from "cli-progress";
+import cliProgress, { type Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
 import {
@@ -271,9 +271,12 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		return Buffer.from(await response.arrayBuffer());
 	}
 
-	async extractZip(zipFile: string | Buffer): Promise<void> {
+	async extractZip(
+		zipFile: string | Buffer,
+		destDir: string = INSTALL_DIR.toString(),
+	): Promise<void> {
 		const zip = new AdmZip(zipFile);
-		zip.extractAllTo(INSTALL_DIR.toString(), true);
+		zip.extractAllTo(destDir, true);
 	}
 
 	static cleanup(): boolean {
@@ -284,37 +287,56 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		return false;
 	}
 
-	setVersion(): void {
+	setVersion(destDir: string = INSTALL_DIR.toString()): void {
 		fs.writeFileSync(
-			path.join(INSTALL_DIR.toString(), "version.json"),
+			path.join(destDir, "version.json"),
 			JSON.stringify({ version: this.version, release: this.release }),
 		);
 	}
 
+	// Remove staging dirs left behind by an interrupted install.
+	private static removeLeftovers(installDir: string): void {
+		const parent = path.dirname(installDir);
+		const prefix = `${path.basename(installDir)}.staging-`;
+		for (const name of fs.readdirSync(parent)) {
+			if (name.startsWith(prefix)) {
+				fs.rmSync(path.join(parent, name), { recursive: true, force: true });
+			}
+		}
+	}
+
 	async install(): Promise<void> {
 		await this.init();
-		await CamoufoxFetcher.cleanup();
-		// Set up outside the try so finally can always tear down the ~600MB staging dir.
+		// Resolve a symlinked install dir so the swap replaces its target, not the link.
+		const installDir = fs.existsSync(INSTALL_DIR)
+			? fs.realpathSync(INSTALL_DIR)
+			: INSTALL_DIR.toString();
+		fs.mkdirSync(path.dirname(installDir), { recursive: true });
+		CamoufoxFetcher.removeLeftovers(installDir);
+		// Staged next to the install dir so the final rename stays on one filesystem.
+		// Set up outside the try so finally can always tear down the ~600MB staging dirs.
+		const stagingDir = fs.mkdtempSync(`${installDir}.staging-`);
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
 		const tempFilePath = path.join(tempDir, "camoufox.zip");
 		const tempFileStream = fs.createWriteStream(tempFilePath);
 		try {
-			fs.mkdirSync(INSTALL_DIR, { recursive: true });
-
 			await webdl(this.url, "Downloading Camoufox...", true, tempFileStream);
 			await new Promise((r) => tempFileStream.close(r));
 
-			await this.extractZip(tempFilePath);
-			this.setVersion();
+			await this.extractZip(tempFilePath, stagingDir);
+			this.setVersion(stagingDir);
 
 			if (OS_NAME !== "win") {
-				execFileSync("chmod", ["-R", "755", INSTALL_DIR.toString()]);
+				execFileSync("chmod", ["-R", "755", stagingDir]);
 			}
+
+			// Replace the previous install only once the new one is complete.
+			fs.rmSync(installDir, { recursive: true, force: true });
+			fs.renameSync(stagingDir, installDir);
 
 			console.log("Camoufox successfully installed.");
 		} catch (e) {
 			console.error(`Error installing Camoufox: ${e}`);
-			await CamoufoxFetcher.cleanup();
 			throw e;
 		} finally {
 			// Best-effort teardown: a throw here would mask the real result, and the caller is fire-and-forget.
@@ -326,8 +348,9 @@ export class CamoufoxFetcher extends GitHubDownloader {
 					);
 				}
 				fs.rmSync(tempDir, { recursive: true, force: true });
+				fs.rmSync(stagingDir, { recursive: true, force: true });
 			} catch (cleanupErr) {
-				console.error(`Failed to remove staging dir ${tempDir}: ${cleanupErr}`);
+				console.error(`Failed to remove staging dir: ${cleanupErr}`);
 			}
 		}
 	}
@@ -382,7 +405,12 @@ function userCacheDir(appName: string): string {
 	} else if (OS_NAME === "mac") {
 		return path.join(os.homedir(), "Library", "Caches", appName);
 	} else {
-		return path.join(os.homedir(), ".cache", appName);
+		// Per the XDG spec a relative XDG_CACHE_HOME is invalid and ignored.
+		const xdg = process.env.XDG_CACHE_HOME;
+		return path.join(
+			xdg && path.isAbsolute(xdg) ? xdg : path.join(os.homedir(), ".cache"),
+			appName,
+		);
 	}
 }
 

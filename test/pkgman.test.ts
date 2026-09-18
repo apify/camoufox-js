@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import AdmZip from "adm-zip";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 // INSTALL_DIR is a module-level constant, so each case re-imports the module
@@ -18,6 +19,28 @@ describe("INSTALL_DIR", () => {
 		expect(INSTALL_DIR.toString()).toContain("camoufox");
 		expect(path.isAbsolute(INSTALL_DIR.toString())).toBe(true);
 	});
+
+	test.skipIf(process.platform !== "linux")(
+		"honors an absolute XDG_CACHE_HOME on Linux",
+		async () => {
+			vi.stubEnv("CAMOUFOX_INSTALL_DIR", "");
+			vi.stubEnv("XDG_CACHE_HOME", "/xdg-cache");
+			vi.resetModules();
+			const { INSTALL_DIR } = await import("../src/pkgman");
+			expect(INSTALL_DIR).toBe(path.join("/xdg-cache", "camoufox"));
+		},
+	);
+
+	test.skipIf(process.platform !== "linux")(
+		"ignores a relative XDG_CACHE_HOME",
+		async () => {
+			vi.stubEnv("CAMOUFOX_INSTALL_DIR", "");
+			vi.stubEnv("XDG_CACHE_HOME", "relative/cache");
+			vi.resetModules();
+			const { INSTALL_DIR } = await import("../src/pkgman");
+			expect(INSTALL_DIR).toBe(path.join(os.homedir(), ".cache", "camoufox"));
+		},
+	);
 
 	test("CAMOUFOX_INSTALL_DIR overrides the install location", async () => {
 		const target = path.join("custom", "camoufox-install");
@@ -63,13 +86,16 @@ function failingFetch() {
 	}));
 }
 
-// A fetch that writes a few bytes and completes cleanly.
+// A fetch that serves a small real zip and completes cleanly.
 function succeedingFetch() {
+	const zip = new AdmZip();
+	zip.addFile("camoufox", Buffer.from("binary"));
+	const bytes = new Uint8Array(zip.toBuffer());
 	return vi.fn(async () => ({
 		ok: true,
 		headers: { get: () => "0" },
 		body: (async function* () {
-			yield new Uint8Array([1, 2, 3]);
+			yield bytes;
 		})(),
 	}));
 }
@@ -99,40 +125,77 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	});
 
-	// Staging dirs install() creates: <tmpdir>/camoufox-<6 random chars>.
+	// Dirs install() creates: <tmpdir>/camoufox-<6 random chars>
+	// and <install dir>.staging-<6 random chars>.
 	function stagingDirs(): string[] {
 		return fs
 			.readdirSync(tmp)
-			.filter((n) => /^camoufox-[A-Za-z0-9]{6}$/.test(n));
+			.filter((n) =>
+				/^(camoufox-[A-Za-z0-9]{6}|(install|target)\.staging-.+)$/.test(n),
+			);
 	}
 
 	async function installWith(fetchImpl: ReturnType<typeof vi.fn>) {
 		const { CamoufoxFetcher } = await import("../src/pkgman");
 		const fetcher = new CamoufoxFetcher();
-		// Skip the release lookup; just hand install() a URL to download.
+		// Skip the release lookup; just hand install() a URL and version.
 		vi.spyOn(fetcher, "init").mockImplementation(async () => {
-			(fetcher as unknown as { _url: string })._url =
-				"https://example.test/camoufox.zip";
+			const f = fetcher as unknown as { _url: string; _version_obj: unknown };
+			f._url = "https://example.test/camoufox.zip";
+			f._version_obj = { version: "1.0", release: "beta.1" };
 		});
-		// Don't extract the placeholder zip or write a version file.
-		vi.spyOn(fetcher, "extractZip").mockResolvedValue(undefined);
-		vi.spyOn(fetcher, "setVersion").mockImplementation(() => {});
 		vi.stubGlobal("fetch", fetchImpl);
 		vi.stubGlobal("console", { ...console, error: vi.fn(), log: vi.fn() });
 		return fetcher;
 	}
 
-	test("removes the staging dir when the download fails", async () => {
+	test("keeps the previous install when the download fails", async () => {
+		const marker = path.join(installDir, "version.json");
+		fs.writeFileSync(marker, "{}");
 		const fetcher = await installWith(failingFetch());
 		// The original download error must survive, and no staging dir is left.
 		await expect(fetcher.install()).rejects.toThrow("connection reset");
 		expect(stagingDirs()).toEqual([]);
+		expect(fs.existsSync(marker)).toBe(true);
 	});
 
-	test("removes the staging dir after a successful install", async () => {
+	test.skipIf(process.platform === "win32")(
+		"swaps the target of a symlinked install dir and keeps the link",
+		async () => {
+			const target = path.join(tmp, "target");
+			fs.mkdirSync(target);
+			fs.writeFileSync(path.join(target, "old-file"), "");
+			fs.rmSync(installDir, { recursive: true });
+			fs.symlinkSync(target, installDir);
+			const fetcher = await installWith(succeedingFetch());
+			await expect(fetcher.install()).resolves.toBeUndefined();
+			expect(stagingDirs()).toEqual([]);
+			expect(fs.lstatSync(installDir).isSymbolicLink()).toBe(true);
+			expect(fs.readdirSync(target).sort()).toEqual([
+				"camoufox",
+				"version.json",
+			]);
+		},
+	);
+
+	test("replaces the previous install after a successful install", async () => {
+		const marker = path.join(installDir, "old-file");
+		fs.writeFileSync(marker, "");
+		// Leftovers from an interrupted earlier install must be swept.
+		fs.mkdirSync(path.join(tmp, "install.staging-abc123"));
 		const fetcher = await installWith(succeedingFetch());
 		// A successful install must resolve (not throw) and leave no staging dir.
 		await expect(fetcher.install()).resolves.toBeUndefined();
 		expect(stagingDirs()).toEqual([]);
+		expect(fs.existsSync(marker)).toBe(false);
+		expect(fs.readdirSync(installDir).sort()).toEqual([
+			"camoufox",
+			"version.json",
+		]);
+		expect(
+			JSON.parse(
+				fs.readFileSync(path.join(installDir, "version.json"), "utf8"),
+			),
+		).toEqual({ version: "1.0", release: "beta.1" });
 	});
 });
