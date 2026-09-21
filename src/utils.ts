@@ -29,7 +29,13 @@ import {
 import { publicIP, validIPv4, validIPv6 } from "./ip.js";
 import { geoipAllowed, getGeolocation, handleLocales } from "./locale.js";
 import FONTS from "./mappings/fonts.config.js";
-import { getPath, installedVerStr, launchPath, OS_NAME } from "./pkgman.js";
+import {
+	ensureCamoufoxInstalled,
+	getPath,
+	installedVerStr,
+	launchPath,
+	OS_NAME,
+} from "./pkgman.js";
 import type { VirtualDisplay } from "./virtdisplay.js";
 import { LeakWarning } from "./warnings.js";
 import { sampleWebGL } from "./webgl/sample.js";
@@ -78,15 +84,7 @@ function getEnvVars(configMap: ConfigMap, userAgentOS: string): EnvVars {
 	return envVars;
 }
 
-export function getAsBooleanFromENV(
-	name: string,
-	defaultValue?: boolean | undefined,
-): boolean {
-	const value = process.env[name];
-	if (value === "false" || value === "0") return false;
-	if (value) return true;
-	return !!defaultValue;
-}
+export { getAsBooleanFromENV } from "./platform.js";
 
 interface Property {
 	property: string;
@@ -598,6 +596,10 @@ export async function launchOptions({
 }: Omit<LaunchOptions, "headless"> & {
 	headless?: boolean;
 }): Promise<Record<string, any>> {
+	// Make sure the configured Camoufox version is on disk before anything
+	// below reads from it (fonts, properties, addons, the executable).
+	await ensureCamoufoxInstalled();
+
 	// Build the config
 	if (!config) {
 		config = {};

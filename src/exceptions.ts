@@ -180,3 +180,13 @@ export class FileNotFoundError extends Error {
 		this.name = "FileNotFoundError";
 	}
 }
+
+export class CorruptedDownload extends Error {
+	constructor(message?: string) {
+		super(
+			message ??
+				"The downloaded asset does not match its expected sha256 digest.",
+		);
+		this.name = "CorruptedDownload";
+	}
+}

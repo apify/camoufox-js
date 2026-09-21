@@ -159,7 +159,7 @@ function joinUnique(seq: string[]): string {
 	return seq.filter((x) => !seen.has(x) && seen.add(x)).join(", ");
 }
 
-const MMDB_FILE = path.join(INSTALL_DIR.toString(), "GeoLite2-City.mmdb");
+export const MMDB_FILE = path.join(INSTALL_DIR, "GeoLite2-City.mmdb");
 const MMDB_REPO = "P3TERX/GeoLite.mmdb";
 
 class MaxMindDownloader extends GitHubDownloader {
