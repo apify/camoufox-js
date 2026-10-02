@@ -10,17 +10,7 @@ export class CONSTRAINTS {
 	static readonly MAX_VERSION: string = "1";
 
 	/**
-	 * Minimum browser releases required by newer Playwright versions, as [[major, minor], release].
-	 * Playwright 1.61 sends viewport fields that builds before beta.30 reject.
+	 * Minimum version with Playwright 1.61+, which sends viewport fields that older builds reject.
 	 */
-	static readonly PLAYWRIGHT_BROWSER_FLOORS: [[number, number], string][] = [
-		[[1, 61], "beta.30"],
-	];
-
-	static asRange(): string {
-		/**
-		 * Returns the version range as a string.
-		 */
-		return `>=${CONSTRAINTS.MIN_VERSION}, <${CONSTRAINTS.MAX_VERSION}`;
-	}
+	static readonly PLAYWRIGHT_1_61_MIN_VERSION: string = "beta.30";
 }

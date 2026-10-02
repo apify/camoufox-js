@@ -215,7 +215,7 @@ describe("camoufoxPath browser floor", () => {
 		fs.rmSync(installDir, { recursive: true, force: true });
 	});
 
-	async function camoufoxPathWith(playwright: string, release: string) {
+	async function loadCamoufoxPath(playwright: string, release: string) {
 		fs.writeFileSync(
 			path.join(installDir, "version.json"),
 			JSON.stringify({ version: "152.0.4", release }),
@@ -225,19 +225,19 @@ describe("camoufoxPath browser floor", () => {
 			createRequire: () => () => ({ version: playwright }),
 		}));
 		vi.resetModules();
-		const { camoufoxPath } = await import("../src/pkgman");
-		return () => camoufoxPath(false);
+		return (await import("../src/pkgman")).camoufoxPath;
 	}
 
-	test("accepts older builds below Playwright 1.61", async () => {
-		expect((await camoufoxPathWith("1.60.0", "beta.29"))()).toBe(installDir);
+	test.each([
+		["1.60.0", "beta.29"],
+		["1.62.1", "beta.30"],
+	])("accepts Playwright %s with %s", async (playwright, release) => {
+		const camoufoxPath = await loadCamoufoxPath(playwright, release);
+		expect(camoufoxPath(false)).toBe(installDir);
 	});
 
 	test("rejects builds below beta.30 from Playwright 1.61", async () => {
-		expect(await camoufoxPathWith("1.61.0", "beta.29")).toThrow("outdated");
-	});
-
-	test("accepts beta.30 from Playwright 1.61", async () => {
-		expect((await camoufoxPathWith("1.62.1", "beta.30"))()).toBe(installDir);
+		const camoufoxPath = await loadCamoufoxPath("1.61.0", "beta.29");
+		expect(() => camoufoxPath(false)).toThrow(">=beta.30");
 	});
 });
