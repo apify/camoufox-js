@@ -199,3 +199,45 @@ describe("CamoufoxFetcher.install cleanup", () => {
 		).toEqual({ version: "1.0", release: "beta.1" });
 	});
 });
+
+describe("camoufoxPath browser floor", () => {
+	let installDir: string;
+
+	beforeEach(() => {
+		installDir = fs.mkdtempSync(path.join(os.tmpdir(), "cfx-floortest-"));
+		vi.stubEnv("CAMOUFOX_INSTALL_DIR", installDir);
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
+		vi.doUnmock("node:module");
+		vi.resetModules();
+		fs.rmSync(installDir, { recursive: true, force: true });
+	});
+
+	async function camoufoxPathWith(playwright: string, release: string) {
+		fs.writeFileSync(
+			path.join(installDir, "version.json"),
+			JSON.stringify({ version: "152.0.4", release }),
+		);
+		vi.doMock("node:module", async (importOriginal) => ({
+			...(await importOriginal<typeof import("node:module")>()),
+			createRequire: () => () => ({ version: playwright }),
+		}));
+		vi.resetModules();
+		const { camoufoxPath } = await import("../src/pkgman");
+		return () => camoufoxPath(false);
+	}
+
+	test("accepts older builds below Playwright 1.61", async () => {
+		expect((await camoufoxPathWith("1.60.0", "beta.29"))()).toBe(installDir);
+	});
+
+	test("rejects builds below beta.30 from Playwright 1.61", async () => {
+		expect(await camoufoxPathWith("1.61.0", "beta.29")).toThrow("outdated");
+	});
+
+	test("accepts beta.30 from Playwright 1.61", async () => {
+		expect((await camoufoxPathWith("1.62.1", "beta.30"))()).toBe(installDir);
+	});
+});
