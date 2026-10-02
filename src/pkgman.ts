@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import type { PathLike } from "node:fs";
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { Writable } from "node:stream";
@@ -77,6 +78,19 @@ const LAUNCH_FILE: { [key: string]: string } = {
 	lin: "camoufox-bin",
 };
 
+// The resolved playwright-core [major, minor], or undefined if it can't be read.
+function playwrightVersion(): [number, number] | undefined {
+	try {
+		const { version } = createRequire(import.meta.url)(
+			"playwright-core/package.json",
+		);
+		const [major, minor] = version.split(".").map(Number);
+		return [major, minor];
+	} catch {
+		return undefined;
+	}
+}
+
 class Version {
 	release: string;
 	version?: string;
@@ -117,7 +131,7 @@ class Version {
 	}
 
 	isSupported(): boolean {
-		return VERSION_MIN.lessThan(this) && this.lessThan(VERSION_MAX);
+		return !this.lessThan(VERSION_MIN) && this.lessThan(VERSION_MAX);
 	}
 
 	static fromPath(filePath: PathLike = INSTALL_DIR): Version {
@@ -136,10 +150,15 @@ class Version {
 	}
 
 	static buildMinMax(): [Version, Version] {
-		return [
-			new Version(CONSTRAINTS.MIN_VERSION),
-			new Version(CONSTRAINTS.MAX_VERSION),
-		];
+		let min = new Version(CONSTRAINTS.MIN_VERSION);
+		const [major, minor] = playwrightVersion() ?? [0, 0];
+		for (const [required, release] of CONSTRAINTS.PLAYWRIGHT_BROWSER_FLOORS) {
+			const floor = new Version(release);
+			const needsFloor =
+				major > required[0] || (major === required[0] && minor >= required[1]);
+			if (needsFloor && min.lessThan(floor)) min = floor;
+		}
+		return [min, new Version(CONSTRAINTS.MAX_VERSION)];
 	}
 }
 
@@ -430,9 +449,9 @@ export function camoufoxPath(downloadIfMissing: boolean = true): PathLike {
 	) {
 		return INSTALL_DIR;
 	} else {
-		if (!downloadIfMissing) {
-			throw new UnsupportedVersion("Camoufox executable is outdated.");
-		}
+		throw new UnsupportedVersion(
+			"Camoufox executable is outdated. Please run `camoufox fetch` to update.",
+		);
 	}
 
 	// Install and recheck
