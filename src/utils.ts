@@ -676,8 +676,20 @@ export async function launchOptions({
 		}
 	}
 
-	// Inject the fingerprint into the config
-	mergeInto(config, fromBrowserforge(fingerprint, ff_version_str));
+	// Load the installed build's property schema up front: BrowserForge's
+	// mapping and the hardcoded additions below can target properties a newer
+	// Camoufox has dropped (v156 removed navigator.product/appCodeName/appName,
+	// battery:*, screen.pageXOffset/pageYOffset, window.history.length and
+	// canvas:aaOffset/aaCapOffset). Filter what WE generate so validateConfig
+	// only ever throws on caller-supplied mistakes, never on our own output.
+	const knownProperties = loadProperties(executable_path);
+	const fingerprintConfig = fromBrowserforge(fingerprint, ff_version_str);
+	for (const key of Object.keys(fingerprintConfig)) {
+		if (!(key in knownProperties)) {
+			delete fingerprintConfig[key];
+		}
+	}
+	mergeInto(config, fingerprintConfig);
 
 	// Add seeds (BrowserForge doesn't generate these). Mirrors fingerprints.py,
 	// which seeds these right after from_browserforge() with setdefault. Range is
@@ -690,7 +702,6 @@ export async function launchOptions({
 	// builds, so seed only what the installed browser's schema knows.
 	const randint = (min: number, max: number) =>
 		Math.floor(Math.random() * (max - min + 1)) + min;
-	const knownProperties = loadProperties(executable_path);
 	for (const seed of ["fonts:spacing_seed", "audio:seed", "canvas:seed"]) {
 		if (seed in knownProperties) {
 			setInto(config, seed, randint(1, 4_294_967_295));
@@ -699,8 +710,11 @@ export async function launchOptions({
 
 	const targetOS = getTargetOS(config);
 
-	// Set a random window.history.length
-	setInto(config, "window.history.length", Math.floor(Math.random() * 5) + 1);
+	// Set a random window.history.length (only when the installed build knows
+	// it — removed in Camoufox v156)
+	if ("window.history.length" in knownProperties) {
+		setInto(config, "window.history.length", Math.floor(Math.random() * 5) + 1);
+	}
 
 	// Update fonts list
 	if (fonts) {
@@ -813,11 +827,17 @@ export async function launchOptions({
 		});
 	}
 
-	// Canvas anti-fingerprinting
-	mergeInto(config, {
+	// Canvas anti-fingerprinting (only properties the installed build knows —
+	// canvas:* was dropped in Camoufox v156)
+	const canvasAntiFingerprinting: Record<string, number | boolean> = {
 		"canvas:aaOffset": Math.floor(Math.random() * 101) - 50, // nosec
 		"canvas:aaCapOffset": true,
-	});
+	};
+	for (const [key, value] of Object.entries(canvasAntiFingerprinting)) {
+		if (key in knownProperties) {
+			config[key] = value;
+		}
+	}
 
 	// Cache previous pages, requests, etc (uses more memory)
 	if (enable_cache) {
