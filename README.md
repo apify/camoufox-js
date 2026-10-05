@@ -24,6 +24,21 @@ exactly that build into `browsers/<repo>/<version>-<build>/` inside that directo
 library uses, so both can share one cache. If the build is missing, the first launch downloads it, unless
 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` is set.
 
+Other builds can be chosen with the same commands as in the
+[Python library](https://github.com/daijro/camoufox/tree/main/pythonlib#fetch), limited to the builds this release
+supports:
+
+```bash
+npx camoufox-js sync                                     # refresh the list of available builds
+npx camoufox-js list all                                 # show them (`list` shows installed ones)
+npx camoufox-js set official/stable                      # follow the latest stable build
+npx camoufox-js set official/stable/152.0.4-beta.30      # or pin one
+npx camoufox-js fetch                                    # install the chosen build
+npx camoufox-js active                                   # print the build launches use
+npx camoufox-js set --release                            # go back to the build this release is tested with
+npx camoufox-js remove official/stable/152.0.4-beta.30   # remove one build (`remove` removes everything)
+```
+
 ## Usage 
 
 You can launch Playwright-controlled Camoufox using this package like this:
