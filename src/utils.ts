@@ -29,7 +29,13 @@ import {
 import { publicIP, validIPv4, validIPv6 } from "./ip.js";
 import { geoipAllowed, getGeolocation, handleLocales } from "./locale.js";
 import FONTS from "./mappings/fonts.config.js";
-import { getPath, installedVerStr, launchPath, OS_NAME } from "./pkgman.js";
+import {
+	ensureCamoufoxInstalled,
+	getPath,
+	installedVerStr,
+	launchPath,
+	OS_NAME,
+} from "./pkgman.js";
 import type { VirtualDisplay } from "./virtdisplay.js";
 import { LeakWarning } from "./warnings.js";
 import { sampleWebGL } from "./webgl/sample.js";
@@ -643,6 +649,13 @@ export async function launchOptions({
 	// webgl_config requires OS to be set
 	if (!operatingSystems && webgl_config) {
 		throw new Error("OS must be set when using webgl_config");
+	}
+
+	if (
+		!executable_path &&
+		!getAsBooleanFromENV("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", false)
+	) {
+		await ensureCamoufoxInstalled();
 	}
 
 	// Add the default addons
