@@ -354,17 +354,16 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	// Remove staging dirs left behind by an interrupted install.
 	private static removeLeftovers(dir: string, prefix: string): void {
 		for (const name of fs.readdirSync(dir)) {
-			if (name.startsWith(prefix)) {
+			// Fresh ones may belong to an install still running in another process.
+			if (name.startsWith(prefix) && isStale(path.join(dir, name))) {
 				fs.rmSync(path.join(dir, name), { recursive: true, force: true });
 			}
 		}
 	}
 
-	private static activate(relativePath: string): void {
+	private static activate(installDir: string, relativePath: string): void {
 		setActive(relativePath);
-		// Tells the Python library this directory uses its layout, so it doesn't wipe it.
-		fs.writeFileSync(compatFlag(), "");
-		removeLegacyInstall();
+		removeLegacyInstall(installDir);
 	}
 
 	async install(): Promise<void> {
@@ -372,13 +371,15 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		const folder = versionFolderName(this.version, this.release, this.sha256);
 		const relativePath = `browsers/${getRepoName(this.githubRepo)}/${folder}`;
 		const installDir = path.join(INSTALL_DIR.toString(), relativePath);
+		fs.mkdirSync(browsersDir(), { recursive: true });
+		// Tells the Python library this directory uses its layout, so it doesn't wipe it.
+		fs.writeFileSync(compatFlag(), "");
 		if (fs.existsSync(path.join(installDir, "version.json"))) {
 			console.log(`Camoufox v${this.verstr} is already installed.`);
-			CamoufoxFetcher.activate(relativePath);
+			CamoufoxFetcher.activate(installDir, relativePath);
 			return;
 		}
 
-		fs.mkdirSync(browsersDir(), { recursive: true });
 		// Older releases staged next to the (symlink-resolved) install dir.
 		const root = fs.realpathSync(INSTALL_DIR);
 		CamoufoxFetcher.removeLeftovers(
@@ -405,14 +406,24 @@ export class CamoufoxFetcher extends GitHubDownloader {
 				execFileSync("chmod", ["-R", "755", stagingDir]);
 			}
 
-			// Another process may have finished the same install in the meantime.
-			if (!fs.existsSync(path.join(installDir, "version.json"))) {
-				// Whatever is there is a partial extraction (the Python library extracts in place).
-				fs.rmSync(installDir, { recursive: true, force: true });
-				fs.mkdirSync(path.dirname(installDir), { recursive: true });
+			fs.mkdirSync(path.dirname(installDir), { recursive: true });
+			try {
 				fs.renameSync(stagingDir, installDir);
+			} catch (e) {
+				// Unless another process finished the same install in the meantime, the target is
+				// an install in progress (the Python library extracts in place) or an abandoned one.
+				if (!fs.existsSync(path.join(installDir, "version.json"))) {
+					if (!fs.existsSync(installDir)) throw e;
+					if (!isStale(installDir)) {
+						throw new Error(
+							`Another process is installing Camoufox into ${installDir}, try again once it finishes.`,
+						);
+					}
+					fs.rmSync(installDir, { recursive: true, force: true });
+					fs.renameSync(stagingDir, installDir);
+				}
 			}
-			CamoufoxFetcher.activate(relativePath);
+			CamoufoxFetcher.activate(installDir, relativePath);
 
 			console.log(`Camoufox successfully installed to ${installDir}.`);
 		} catch (e) {
@@ -494,22 +505,36 @@ function userCacheDir(appName: string): string {
 	}
 }
 
-// Entries of the versioned layout (shared with the Python library) and the GeoIP database.
-// Anything else next to a root version.json belongs to a flat install of an older release.
-const VERSIONED_LAYOUT_ENTRIES = new Set([
+// Root entries of the layout shared with the Python library, never part of a flat install.
+const SHARED_ENTRIES = new Set([
+	".0.5_FLAG",
+	"addons",
 	"browsers",
 	"config.json",
+	"fontconfig",
+	"geoip",
 	"repo_cache.json",
-	".0.5_FLAG",
-	"GeoLite2-City.mmdb",
 ]);
 
-function removeLegacyInstall(): void {
+// Older than any download or extraction still in progress.
+function isStale(p: string): boolean {
+	try {
+		return Date.now() - fs.statSync(p).mtimeMs > 24 * 60 * 60 * 1000;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Removes a flat install of an older release from the root of INSTALL_DIR. It holds the
+ * same top-level entries as the build just installed into `installDir`.
+ */
+function removeLegacyInstall(installDir: string): void {
 	const root = INSTALL_DIR.toString();
 	if (!fs.existsSync(path.join(root, "version.json"))) return;
 	try {
-		for (const name of fs.readdirSync(root)) {
-			if (!VERSIONED_LAYOUT_ENTRIES.has(name)) {
+		for (const name of fs.readdirSync(installDir)) {
+			if (!SHARED_ENTRIES.has(name)) {
 				fs.rmSync(path.join(root, name), { recursive: true, force: true });
 			}
 		}

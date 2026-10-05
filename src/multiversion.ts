@@ -35,18 +35,14 @@ export function loadConfig(): CamoufoxConfig {
 
 export function saveConfig(config: CamoufoxConfig): void {
 	fs.mkdirSync(INSTALL_DIR, { recursive: true });
-	fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
+	// Through a rename, so a concurrent reader never sees a half-written file.
+	const tmp = `${configFile()}.${process.pid}.tmp`;
+	fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
+	fs.renameSync(tmp, configFile());
 }
 
 export function setActive(relativePath: string): void {
 	saveConfig({ ...loadConfig(), active_version: relativePath });
-}
-
-// At launch, the active version is only bookkeeping and the install dir may be read-only.
-function recordActive(relativePath: string): void {
-	try {
-		setActive(relativePath);
-	} catch {}
 }
 
 // Folder names of the Python library's repos.yml entries.
@@ -119,7 +115,8 @@ export function listInstalled(): InstalledVersion[] {
 
 /**
  * The build to launch: the pinned one unless the user explicitly chose another, else the
- * active one. Null when that build isn't installed.
+ * active one. Null when that build isn't installed. Unlike the Python library, it doesn't
+ * record the result in config.json, as launches may run concurrently or from a read-only dir.
  */
 export function getActivePath(): string | null {
 	const config = loadConfig();
@@ -130,9 +127,7 @@ export function getActivePath(): string | null {
 		const inst = listInstalled().find((v) =>
 			pinMatches(pin, v.repoName, v.version.version ?? "", v.version.release),
 		);
-		if (!inst) return null;
-		if (active !== inst.relativePath) recordActive(inst.relativePath);
-		return inst.path;
+		return inst?.path ?? null;
 	}
 
 	if (active) {
@@ -144,10 +139,7 @@ export function getActivePath(): string | null {
 
 	if (!config.channel && !config.pinned) {
 		const [newest] = listInstalled();
-		if (newest) {
-			recordActive(newest.relativePath);
-			return newest.path;
-		}
+		if (newest) return newest.path;
 	}
 
 	return null;

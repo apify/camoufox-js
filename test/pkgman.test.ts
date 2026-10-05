@@ -201,10 +201,15 @@ describe("CamoufoxFetcher.install", () => {
 			path.join(installDir, "version.json"),
 			JSON.stringify({ version: "152.0.4", release: "beta.31" }),
 		);
-		fs.writeFileSync(path.join(installDir, "camoufox-bin"), "");
+		fs.writeFileSync(path.join(installDir, "camoufox"), "");
 		fs.writeFileSync(path.join(installDir, "GeoLite2-City.mmdb"), "");
+		// Neither the Python library's data nor anything else is part of the flat install.
+		fs.mkdirSync(path.join(installDir, "geoip"));
+		fs.writeFileSync(path.join(installDir, "notes.txt"), "");
 		// Leftovers from an interrupted earlier install must be swept.
-		fs.mkdirSync(path.join(tmp, "install.staging-abc123"));
+		const leftover = path.join(tmp, "install.staging-abc123");
+		fs.mkdirSync(leftover);
+		fs.utimesSync(leftover, 0, 0);
 		const fetcher = await installWith(succeedingFetch());
 		// A successful install must resolve (not throw) and leave no staging dir.
 		await expect(fetcher.install()).resolves.toBeUndefined();
@@ -214,6 +219,8 @@ describe("CamoufoxFetcher.install", () => {
 			"GeoLite2-City.mmdb",
 			"browsers",
 			"config.json",
+			"geoip",
+			"notes.txt",
 		]);
 		expect(fs.readdirSync(versionedDir()).sort()).toEqual([
 			"camoufox",
@@ -233,6 +240,31 @@ describe("CamoufoxFetcher.install", () => {
 		expect(
 			JSON.parse(fs.readFileSync(path.join(installDir, "config.json"), "utf8")),
 		).toEqual({ active_version: "browsers/official/1.0-beta.1" });
+	});
+
+	test("leaves alone what another process is installing", async () => {
+		const staging = path.join(installDir, "browsers", ".staging-other");
+		fs.mkdirSync(staging, { recursive: true });
+		fs.mkdirSync(versionedDir(), { recursive: true });
+		fs.writeFileSync(path.join(versionedDir(), "partial"), "");
+		const fetcher = await installWith(succeedingFetch());
+		await expect(fetcher.install()).rejects.toThrow(
+			"Another process is installing",
+		);
+		expect(fs.existsSync(staging)).toBe(true);
+		expect(fs.readdirSync(versionedDir())).toEqual(["partial"]);
+	});
+
+	test("replaces an abandoned partial install", async () => {
+		fs.mkdirSync(versionedDir(), { recursive: true });
+		fs.writeFileSync(path.join(versionedDir(), "partial"), "");
+		fs.utimesSync(versionedDir(), 0, 0);
+		const fetcher = await installWith(succeedingFetch());
+		await expect(fetcher.install()).resolves.toBeUndefined();
+		expect(fs.readdirSync(versionedDir()).sort()).toEqual([
+			"camoufox",
+			"version.json",
+		]);
 	});
 
 	test("rejects a download whose sha256 doesn't match", async () => {
