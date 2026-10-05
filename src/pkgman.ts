@@ -449,7 +449,7 @@ export function camoufoxPath(downloadIfMissing: boolean = true): PathLike {
 		return INSTALL_DIR;
 	} else {
 		throw new UnsupportedVersion(
-			`Camoufox executable is outdated (supported range: ${SUPPORTED_RANGE}). Please run \`camoufox fetch\` to update.`,
+			`Camoufox v${installedVerStr()} is not supported by this library (supported range: ${SUPPORTED_RANGE}). Please run \`camoufox fetch\` to install a supported version.`,
 		);
 	}
 

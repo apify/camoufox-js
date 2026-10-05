@@ -240,4 +240,37 @@ describe("camoufoxPath browser floor", () => {
 		const camoufoxPath = await loadCamoufoxPath("1.61.0", "beta.29");
 		expect(() => camoufoxPath(false)).toThrow(">=beta.30");
 	});
+
+	test("rejects Firefox 156 builds", async () => {
+		const camoufoxPath = await loadCamoufoxPath("1.62.1", "beta.34");
+		expect(() => camoufoxPath(false)).toThrow("<beta.32");
+	});
+});
+
+describe("CamoufoxFetcher supported range", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	test("skips releases newer than the supported range", async () => {
+		const { CamoufoxFetcher, OS_NAME } = await import("../src/pkgman");
+		const suffix = `${OS_NAME}.${CamoufoxFetcher.getPlatformArch()}.zip`;
+		const asset = (name: string) => ({
+			name,
+			browser_download_url: `https://example.com/${name}`,
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => ({
+				ok: true,
+				json: async () => [
+					{ assets: [asset(`camoufox-156.0.1-beta.34-${suffix}`)] },
+					{ assets: [asset(`camoufox-152.0.4-beta.30-${suffix}`)] },
+				],
+			})),
+		);
+		const fetcher = new CamoufoxFetcher();
+		await fetcher.init();
+		expect(fetcher.verstr).toBe("152.0.4-beta.30");
+	});
 });
