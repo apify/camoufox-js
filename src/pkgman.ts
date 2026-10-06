@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import type { PathLike } from "node:fs";
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { Writable } from "node:stream";
@@ -77,6 +78,18 @@ const LAUNCH_FILE: { [key: string]: string } = {
 	lin: "camoufox-bin",
 };
 
+function isPlaywright161OrNewer(): boolean {
+	try {
+		const { version } = createRequire(import.meta.url)(
+			"playwright-core/package.json",
+		);
+		const [major, minor] = version.split(".").map(Number);
+		return major > 1 || (major === 1 && minor >= 61);
+	} catch {
+		return false;
+	}
+}
+
 class Version {
 	release: string;
 	version?: string;
@@ -117,7 +130,7 @@ class Version {
 	}
 
 	isSupported(): boolean {
-		return VERSION_MIN.lessThan(this) && this.lessThan(VERSION_MAX);
+		return !this.lessThan(VERSION_MIN) && this.lessThan(VERSION_MAX);
 	}
 
 	static fromPath(filePath: PathLike = INSTALL_DIR): Version {
@@ -137,13 +150,18 @@ class Version {
 
 	static buildMinMax(): [Version, Version] {
 		return [
-			new Version(CONSTRAINTS.MIN_VERSION),
+			new Version(
+				isPlaywright161OrNewer()
+					? CONSTRAINTS.PLAYWRIGHT_1_61_MIN_VERSION
+					: CONSTRAINTS.MIN_VERSION,
+			),
 			new Version(CONSTRAINTS.MAX_VERSION),
 		];
 	}
 }
 
 const [VERSION_MIN, VERSION_MAX] = Version.buildMinMax();
+const SUPPORTED_RANGE = `>=${VERSION_MIN.release}, <${VERSION_MAX.release}`;
 
 export class GitHubDownloader {
 	githubRepo: string;
@@ -234,7 +252,7 @@ export class CamoufoxFetcher extends GitHubDownloader {
 
 	missingAssetError(): void {
 		throw new MissingRelease(
-			`No matching release found for ${OS_NAME} ${this.arch} in the supported range: (${CONSTRAINTS.asRange()}). Please update the library.`,
+			`No matching release found for ${OS_NAME} ${this.arch} in the supported range: (${SUPPORTED_RANGE}). Please update the library.`,
 		);
 	}
 
@@ -430,9 +448,9 @@ export function camoufoxPath(downloadIfMissing: boolean = true): PathLike {
 	) {
 		return INSTALL_DIR;
 	} else {
-		if (!downloadIfMissing) {
-			throw new UnsupportedVersion("Camoufox executable is outdated.");
-		}
+		throw new UnsupportedVersion(
+			`Camoufox v${installedVerStr()} is not supported by this library (supported range: ${SUPPORTED_RANGE}). Please run \`camoufox fetch\` to install a supported version.`,
+		);
 	}
 
 	// Install and recheck
