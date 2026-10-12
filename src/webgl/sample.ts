@@ -61,7 +61,13 @@ export async function sampleWebGL(
 		query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE vendor = ? AND renderer = ?`;
 		params = [vendor, renderer];
 	} else {
-		query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE ${os} > 0`;
+		// Software rasterizers must never win the weighted draw. WAFs flag
+		// them far more reliably than any GPU/screen mismatch (see
+		// daijro/camoufox#743, which fixed the same bias in the python
+		// generator, and #276's dataset analysis). An explicit
+		// vendor/renderer pair below still selects them on purpose -- this
+		// only stops the random sampler from handing them out.
+		query = `SELECT vendor, renderer, data, ${os} FROM webgl_fingerprints WHERE ${os} > 0 AND renderer NOT LIKE '%llvmpipe%' AND renderer NOT LIKE '%SwiftShader%' AND renderer NOT LIKE '%Basic Render%' AND renderer NOT LIKE '%Generic Renderer%'`;
 	}
 
 	return new Promise<WebGLData>((resolve, reject) => {
