@@ -12,7 +12,12 @@ import AdmZip from "adm-zip";
 import cliProgress, { type Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
-import { effectivePin, pinMatches, pinSpec } from "./browser-pin.js";
+import {
+	effectivePin,
+	pinMatches,
+	pinSpec,
+	warnIfUnpaired,
+} from "./browser-pin.js";
 import {
 	CamoufoxNotInstalled,
 	CorruptedDownload,
@@ -566,7 +571,16 @@ function activeInstallDir(): string {
 }
 
 export function installedVerStr(): string {
-	return Version.fromPath(activeInstallDir()).fullString;
+	const dir = activeInstallDir();
+	const version = Version.fromPath(dir);
+	if (path.basename(path.dirname(path.dirname(dir))) === "browsers") {
+		warnIfUnpaired(
+			path.basename(path.dirname(dir)),
+			version.version ?? "",
+			version.release,
+		);
+	}
+	return version.fullString;
 }
 
 /**

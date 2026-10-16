@@ -63,3 +63,25 @@ export function pinMatches(
 		build === pin.build
 	);
 }
+
+let warned = false;
+
+/**
+ * Warns once when a build the user chose explicitly (`camoufox set`) is not the one this
+ * library was tested with.
+ */
+export function warnIfUnpaired(
+	repoName: string,
+	version: string,
+	build: string,
+): void {
+	const pin = loadPin();
+	if (warned || !pin || pinMatches(pin, repoName, version, build)) return;
+	warned = true;
+	console.warn(
+		`Launching ${repoName.toLowerCase()} ${version}-${build}, which you selected explicitly. ` +
+			`This camoufox release was built and tested with ${pin.repoName} ${pinSpec(pin)} ` +
+			`(${pin.tag}); other builds may not be compatible. ` +
+			"Run `camoufox set --release` to go back to the paired build.",
+	);
+}

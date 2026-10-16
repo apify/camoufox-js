@@ -383,6 +383,24 @@ describe("install resolution", () => {
 		expect(camoufoxPath()).toBe(dir);
 	});
 
+	test("warns once when an explicitly chosen build is not the pinned one", async () => {
+		writeInstall("browsers/official/152.0.4-beta.31", {
+			version: "152.0.4",
+			build: "beta.31",
+		});
+		writeConfig({
+			channel: "official/stable",
+			pinned: "152.0.4-beta.31",
+			active_version: "browsers/official/152.0.4-beta.31",
+		});
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const { installedVerStr } = await import("../src/pkgman");
+		installedVerStr();
+		installedVerStr();
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0][0]).toContain("152.0.4-beta.31");
+	});
+
 	test("reports a missing install", async () => {
 		const { camoufoxPath, installedVerStr } = await import("../src/pkgman");
 		const { CamoufoxNotInstalled, FileNotFoundError } = await import(
