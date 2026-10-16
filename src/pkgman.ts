@@ -192,6 +192,10 @@ export class GitHubDownloader {
 		return asset.browser_download_url;
 	}
 
+	releasesUrl(): string {
+		return this.apiUrl;
+	}
+
 	missingAssetError(): void {
 		throw new MissingRelease(
 			`Could not find a release asset in ${this.githubRepo}.`,
@@ -203,11 +207,12 @@ export class GitHubDownloader {
 	): Promise<any> {
 		let attempts = 0;
 		let response: Response | undefined;
+		const url = this.releasesUrl();
 
 		while (attempts < retries) {
 			try {
-				response = await fetch(this.apiUrl, {
-					headers: getAuthorizationHeaders(this.apiUrl),
+				response = await fetch(url, {
+					headers: getAuthorizationHeaders(url),
 				});
 				if (response.ok) break;
 			} catch (e) {
@@ -218,11 +223,12 @@ export class GitHubDownloader {
 		}
 		if (!response || !response.ok) {
 			throw new Error(
-				`Failed to fetch releases from ${this.apiUrl} after ${retries} attempts`,
+				`Failed to fetch releases from ${url} after ${retries} attempts`,
 			);
 		}
 
-		const releases = await response.json();
+		const data = await response.json();
+		const releases = Array.isArray(data) ? data : [data];
 
 		for (const release of releases) {
 			if (release.prerelease || release.draft) continue;
@@ -257,6 +263,13 @@ export class CamoufoxFetcher extends GitHubDownloader {
 
 	async init() {
 		await this.fetchLatest();
+	}
+
+	releasesUrl(): string {
+		const pin = effectivePin(loadConfig());
+		return pin && getRepoName(this.githubRepo) === pin.repoName
+			? `${this.apiUrl}/tags/${pin.tag}`
+			: this.apiUrl;
 	}
 
 	checkAsset(asset: any, release?: any): [Version, string] | null {
