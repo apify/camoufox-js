@@ -12,7 +12,7 @@ import AdmZip from "adm-zip";
 import cliProgress, { type Options } from "cli-progress";
 import prettyBytes from "pretty-bytes";
 import { CONSTRAINTS } from "./__version__.js";
-import { effectivePin, pinMatches, pinSpec } from "./browser-pin.js";
+import { effectivePin, loadPin, pinMatches, pinSpec } from "./browser-pin.js";
 import {
 	CamoufoxNotInstalled,
 	CorruptedDownload,
@@ -24,6 +24,7 @@ import {
 } from "./exceptions.js";
 import {
 	browsersDir,
+	type CachedVersion,
 	compatFlag,
 	getActivePath,
 	getRepoName,
@@ -177,7 +178,7 @@ export class Version {
 }
 
 const [VERSION_MIN, VERSION_MAX] = Version.buildMinMax();
-const SUPPORTED_RANGE = `>=${VERSION_MIN.release}, <${VERSION_MAX.release}`;
+export const SUPPORTED_RANGE = `>=${VERSION_MIN.release}, <${VERSION_MAX.release}`;
 
 export class GitHubDownloader {
 	githubRepo: string;
@@ -202,12 +203,13 @@ export class GitHubDownloader {
 		);
 	}
 
-	async getAsset(
-		{ retries }: { retries: number } = { retries: 5 },
-	): Promise<any> {
+	async getReleases(
+		{ retries, url = this.releasesUrl() }: { retries: number; url?: string } = {
+			retries: 5,
+		},
+	): Promise<any[]> {
 		let attempts = 0;
 		let response: Response | undefined;
-		const url = this.releasesUrl();
 
 		while (attempts < retries) {
 			try {
@@ -228,9 +230,13 @@ export class GitHubDownloader {
 		}
 
 		const data = await response.json();
-		const releases = Array.isArray(data) ? data : [data];
+		return Array.isArray(data) ? data : [data];
+	}
 
-		for (const release of releases) {
+	async getAsset(
+		{ retries }: { retries: number } = { retries: 5 },
+	): Promise<any> {
+		for (const release of await this.getReleases({ retries })) {
 			if (release.prerelease || release.draft) continue;
 			for (const asset of release.assets) {
 				const data = this.checkAsset(asset, release);
@@ -253,12 +259,22 @@ export class CamoufoxFetcher extends GitHubDownloader {
 	sha256?: string;
 	createdAt?: string;
 
-	constructor() {
+	/**
+	 * @param selected A build from `listAvailableVersions()` to install instead of the pinned one.
+	 */
+	constructor(selected?: CachedVersion) {
 		super("daijro/camoufox");
 		this.arch = CamoufoxFetcher.getPlatformArch();
 		this.pattern = new RegExp(
 			`camoufox-(.+)-(.+)-${OS_NAME}\\.${this.arch}\\.zip`,
 		);
+		if (selected) {
+			this._version_obj = new Version(selected.build, selected.version);
+			this._url = selected.url;
+			this.isPrerelease = selected.is_prerelease;
+			this.sha256 = selected.sha256 ?? undefined;
+			this.createdAt = selected.created_at;
+		}
 	}
 
 	async init() {
@@ -565,8 +581,70 @@ function activeInstallDir(): string {
 	return getActivePath() ?? INSTALL_DIR.toString();
 }
 
+let warnedUnpaired = false;
+
 export function installedVerStr(): string {
-	return Version.fromPath(activeInstallDir()).fullString;
+	const installDir = activeInstallDir();
+	const version = Version.fromPath(installDir);
+	const pin = loadPin();
+	if (
+		!warnedUnpaired &&
+		pin &&
+		installDir !== INSTALL_DIR.toString() &&
+		!pinMatches(
+			pin,
+			path.basename(path.dirname(installDir)),
+			version.version ?? "",
+			version.release,
+		)
+	) {
+		warnedUnpaired = true;
+		console.warn(
+			`Launching Camoufox v${version.fullString}, which was selected explicitly. This release of camoufox-js is tested with v${pinSpec(pin)}, run \`camoufox set --release\` to go back to it.`,
+		);
+	}
+	return version.fullString;
+}
+
+/**
+ * Every build of the official repo published for this platform, newest first. Prereleases
+ * and builds this library doesn't support are included, as the Python library shares the cache.
+ */
+export async function listAvailableVersions(): Promise<CachedVersion[]> {
+	const fetcher = new CamoufoxFetcher();
+	const versions: CachedVersion[] = [];
+	const releases = await fetcher.getReleases({
+		retries: 5,
+		url: fetcher.apiUrl,
+	});
+	for (const release of releases) {
+		if (release.draft) continue;
+		for (const asset of release.assets) {
+			const match = asset.name.match(fetcher.pattern);
+			if (!match) continue;
+			versions.push({
+				version: match[1],
+				build: match[2],
+				url: asset.browser_download_url,
+				is_prerelease:
+					Boolean(release.prerelease) ||
+					match[2].split(".")[0].toLowerCase() === "alpha",
+				asset_id: asset.id,
+				asset_size: asset.size,
+				asset_updated_at: asset.updated_at,
+				sha256: asset.digest?.startsWith("sha256:")
+					? asset.digest.slice("sha256:".length)
+					: null,
+				created_at: asset.created_at,
+			});
+		}
+	}
+	return versions.sort((a, b) => {
+		const [va, vb] = [new Version(a.build), new Version(b.build)];
+		if (va.lessThan(vb)) return 1;
+		if (vb.lessThan(va)) return -1;
+		return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+	});
 }
 
 /**
