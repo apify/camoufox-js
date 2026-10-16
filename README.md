@@ -25,8 +25,8 @@ library uses, so both can share one cache. If the build is missing, the first la
 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` is set.
 
 Other builds can be chosen with the same commands as in the
-[Python library](https://github.com/daijro/camoufox/tree/main/pythonlib#fetch), limited to the builds this release
-supports:
+[Python library](https://github.com/daijro/camoufox/blob/main/python/README.md#cli), limited to the official repo's
+builds this release supports (`set` without a specifier prints the active build instead of opening a picker):
 
 ```bash
 npx camoufox-js sync                                     # refresh the list of available builds

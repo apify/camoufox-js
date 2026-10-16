@@ -193,6 +193,10 @@ export class GitHubDownloader {
 		return asset.browser_download_url;
 	}
 
+	releasesUrl(): string {
+		return this.apiUrl;
+	}
+
 	missingAssetError(): void {
 		throw new MissingRelease(
 			`Could not find a release asset in ${this.githubRepo}.`,
@@ -200,15 +204,17 @@ export class GitHubDownloader {
 	}
 
 	async getReleases(
-		{ retries }: { retries: number } = { retries: 5 },
+		{ retries, url = this.releasesUrl() }: { retries: number; url?: string } = {
+			retries: 5,
+		},
 	): Promise<any[]> {
 		let attempts = 0;
 		let response: Response | undefined;
 
 		while (attempts < retries) {
 			try {
-				response = await fetch(this.apiUrl, {
-					headers: getAuthorizationHeaders(this.apiUrl),
+				response = await fetch(url, {
+					headers: getAuthorizationHeaders(url),
 				});
 				if (response.ok) break;
 			} catch (e) {
@@ -219,11 +225,12 @@ export class GitHubDownloader {
 		}
 		if (!response || !response.ok) {
 			throw new Error(
-				`Failed to fetch releases from ${this.apiUrl} after ${retries} attempts`,
+				`Failed to fetch releases from ${url} after ${retries} attempts`,
 			);
 		}
 
-		return response.json();
+		const data = await response.json();
+		return Array.isArray(data) ? data : [data];
 	}
 
 	async getAsset(
@@ -272,6 +279,13 @@ export class CamoufoxFetcher extends GitHubDownloader {
 
 	async init() {
 		await this.fetchLatest();
+	}
+
+	releasesUrl(): string {
+		const pin = effectivePin(loadConfig());
+		return pin && getRepoName(this.githubRepo) === pin.repoName
+			? `${this.apiUrl}/tags/${pin.tag}`
+			: this.apiUrl;
 	}
 
 	checkAsset(asset: any, release?: any): [Version, string] | null {
@@ -599,7 +613,11 @@ export function installedVerStr(): string {
 export async function listAvailableVersions(): Promise<CachedVersion[]> {
 	const fetcher = new CamoufoxFetcher();
 	const versions: CachedVersion[] = [];
-	for (const release of await fetcher.getReleases()) {
+	const releases = await fetcher.getReleases({
+		retries: 5,
+		url: fetcher.apiUrl,
+	});
+	for (const release of releases) {
 		if (release.draft) continue;
 		for (const asset of release.assets) {
 			const match = asset.name.match(fetcher.pattern);

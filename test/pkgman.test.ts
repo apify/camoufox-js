@@ -414,53 +414,6 @@ describe("install resolution", () => {
 	});
 });
 
-describe("camoufoxPath browser floor", () => {
-	let installDir: string;
-
-	beforeEach(() => {
-		installDir = fs.mkdtempSync(path.join(os.tmpdir(), "cfx-floortest-"));
-		vi.stubEnv("CAMOUFOX_INSTALL_DIR", installDir);
-	});
-
-	afterEach(() => {
-		vi.unstubAllEnvs();
-		vi.doUnmock("node:module");
-		vi.resetModules();
-		fs.rmSync(installDir, { recursive: true, force: true });
-	});
-
-	async function loadCamoufoxPath(playwright: string, release: string) {
-		fs.writeFileSync(
-			path.join(installDir, "version.json"),
-			JSON.stringify({ version: "152.0.4", release }),
-		);
-		vi.doMock("node:module", async (importOriginal) => ({
-			...(await importOriginal<typeof import("node:module")>()),
-			createRequire: () => () => ({ version: playwright }),
-		}));
-		vi.resetModules();
-		return (await import("../src/pkgman")).camoufoxPath;
-	}
-
-	test.each([
-		["1.60.0", "beta.29"],
-		["1.62.1", "beta.30"],
-	])("accepts Playwright %s with %s", async (playwright, release) => {
-		const camoufoxPath = await loadCamoufoxPath(playwright, release);
-		expect(camoufoxPath(false)).toBe(installDir);
-	});
-
-	test("rejects builds below beta.30 from Playwright 1.61", async () => {
-		const camoufoxPath = await loadCamoufoxPath("1.61.0", "beta.29");
-		expect(() => camoufoxPath(false)).toThrow(">=beta.30");
-	});
-
-	test("rejects Firefox 156 builds", async () => {
-		const camoufoxPath = await loadCamoufoxPath("1.62.1", "beta.34");
-		expect(() => camoufoxPath(false)).toThrow("<beta.32");
-	});
-});
-
 describe("CamoufoxFetcher release selection", () => {
 	let installDir: string;
 
@@ -514,6 +467,14 @@ describe("CamoufoxFetcher release selection", () => {
 		);
 	});
 
+	test("requests the pinned release directly", async () => {
+		const pin = (await import("../src/browser-pin")).loadPin();
+		await fetcherFor(builds);
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
+			`https://api.github.com/repos/daijro/camoufox/releases/tags/${pin?.tag}`,
+		);
+	});
+
 	test("follows the newest supported build after an explicit choice", async () => {
 		fs.writeFileSync(
 			path.join(installDir, "config.json"),
@@ -521,5 +482,83 @@ describe("CamoufoxFetcher release selection", () => {
 		);
 		const fetcher = await fetcherFor(builds);
 		expect(fetcher.verstr).toBe("152.0.4-beta.31");
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
+			"https://api.github.com/repos/daijro/camoufox/releases",
+		);
+	});
+});
+
+describe("camoufoxPath browser floor", () => {
+	let installDir: string;
+
+	beforeEach(() => {
+		installDir = fs.mkdtempSync(path.join(os.tmpdir(), "cfx-floortest-"));
+		vi.stubEnv("CAMOUFOX_INSTALL_DIR", installDir);
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
+		vi.doUnmock("node:module");
+		vi.resetModules();
+		fs.rmSync(installDir, { recursive: true, force: true });
+	});
+
+	async function loadCamoufoxPath(playwright: string, release: string) {
+		fs.writeFileSync(
+			path.join(installDir, "version.json"),
+			JSON.stringify({ version: "152.0.4", release }),
+		);
+		vi.doMock("node:module", async (importOriginal) => ({
+			...(await importOriginal<typeof import("node:module")>()),
+			createRequire: () => () => ({ version: playwright }),
+		}));
+		vi.resetModules();
+		return (await import("../src/pkgman")).camoufoxPath;
+	}
+
+	test.each([
+		["1.60.0", "beta.29"],
+		["1.62.1", "beta.30"],
+	])("accepts Playwright %s with %s", async (playwright, release) => {
+		const camoufoxPath = await loadCamoufoxPath(playwright, release);
+		expect(camoufoxPath(false)).toBe(installDir);
+	});
+
+	test("rejects builds below beta.30 from Playwright 1.61", async () => {
+		const camoufoxPath = await loadCamoufoxPath("1.61.0", "beta.29");
+		expect(() => camoufoxPath(false)).toThrow(">=beta.30");
+	});
+
+	test("rejects Firefox 156 builds", async () => {
+		const camoufoxPath = await loadCamoufoxPath("1.62.1", "beta.34");
+		expect(() => camoufoxPath(false)).toThrow("<beta.32");
+	});
+});
+
+describe("CamoufoxFetcher supported range", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	test("skips releases newer than the supported range", async () => {
+		const { CamoufoxFetcher, OS_NAME } = await import("../src/pkgman");
+		const suffix = `${OS_NAME}.${CamoufoxFetcher.getPlatformArch()}.zip`;
+		const asset = (name: string) => ({
+			name,
+			browser_download_url: `https://example.com/${name}`,
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => ({
+				ok: true,
+				json: async () => [
+					{ assets: [asset(`camoufox-156.0.1-beta.34-${suffix}`)] },
+					{ assets: [asset(`camoufox-152.0.4-beta.30-${suffix}`)] },
+				],
+			})),
+		);
+		const fetcher = new CamoufoxFetcher();
+		await fetcher.init();
+		expect(fetcher.verstr).toBe("152.0.4-beta.30");
 	});
 });

@@ -226,6 +226,9 @@ describe("listAvailableVersions", () => {
 			["152.0.4", "beta.30", false, "c".repeat(64)],
 			["152.0.4", "alpha.25", true, null],
 		]);
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
+			"https://api.github.com/repos/daijro/camoufox/releases",
+		);
 	});
 });
 
