@@ -19,6 +19,11 @@ directory is ephemeral or persisted separately (similar to Playwright's
 CAMOUFOX_INSTALL_DIR=/opt/camoufox npx camoufox-js fetch
 ```
 
+Each camoufox-js release is tested with one Camoufox build (`src/data-files/browser-pin.json`), and `fetch` installs
+exactly that build into `browsers/<repo>/<version>-<build>/` inside that directory. This is the layout the Python
+library uses, so both can share one cache. If the build is missing, the first launch downloads it, unless
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` is set.
+
 ## Usage 
 
 You can launch Playwright-controlled Camoufox using this package like this:
