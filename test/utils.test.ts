@@ -112,3 +112,66 @@ describe("launchOptions seeding", () => {
 		).rejects.toThrow("Unknown property audio:seed in config");
 	});
 });
+
+describe("launchOptions dropped-property filtering", () => {
+	const readConfig = (env: Record<string, unknown>) =>
+		JSON.parse(
+			Object.keys(env)
+				.filter((k) => k.startsWith("CAMOU_CONFIG_"))
+				.sort()
+				.map((k) => env[k])
+				.join(""),
+		);
+
+	// Simulates a newer browser whose properties.json no longer declares the
+	// properties BrowserForge/hardcoded additions target (Camoufox v156 dropped
+	// navigator.product/appCodeName/appName, battery:*, screen.pageXOffset,
+	// window.history.length and canvas:aaOffset/aaCapOffset).
+	const DROPPED = [
+		"navigator.product",
+		"navigator.appCodeName",
+		"navigator.appName",
+		"battery:charging",
+		"battery:chargingTime",
+		"battery:dischargingTime",
+		"screen.pageXOffset",
+		"screen.pageYOffset",
+		"window.history.length",
+		"canvas:aaOffset",
+		"canvas:aaCapOffset",
+	];
+	const newerBrowserDir = () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-newer-"));
+		const properties = JSON.parse(
+			fs.readFileSync(getPath("properties.json"), "utf-8"),
+		).filter(
+			(p: { property: string }) => !DROPPED.includes(p.property),
+		);
+		fs.writeFileSync(
+			path.join(dir, "properties.json"),
+			JSON.stringify(properties),
+		);
+		return path.join(dir, "camoufox-bin");
+	};
+
+	test("generated config omits properties the installed browser dropped", async () => {
+		const { env } = await launchOptions({
+			headless: true,
+			executable_path: newerBrowserDir(),
+		});
+		const config = readConfig(env);
+		for (const key of DROPPED) {
+			expect(config).not.toHaveProperty(key);
+		}
+	});
+
+	test("still rejects an explicitly passed dropped property", async () => {
+		await expect(
+			launchOptions({
+				headless: true,
+				executable_path: newerBrowserDir(),
+				config: { "navigator.product": "Gecko" },
+			}),
+		).rejects.toThrow("Unknown property navigator.product in config");
+	});
+});
