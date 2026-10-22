@@ -866,7 +866,7 @@ export async function launchOptions({
 		firefoxUserPrefs: firefox_user_prefs,
 		proxy: proxyUrl
 			? {
-					server: proxyUrl.origin,
+					server: `${proxyUrl.protocol}//${proxyUrl.host}`,
 					username: proxyUrl.username,
 					password: proxyUrl.password,
 					bypass: typeof proxy === "string" ? undefined : proxy?.bypass,

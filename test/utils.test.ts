@@ -112,3 +112,13 @@ describe("launchOptions seeding", () => {
 		).rejects.toThrow("Unknown property audio:seed in config");
 	});
 });
+
+describe("launchOptions proxy", () => {
+	test("keeps the scheme of a SOCKS proxy", async () => {
+		const { proxy } = await launchOptions({
+			headless: true,
+			proxy: { server: "socks5://127.0.0.1:1080" },
+		});
+		expect(proxy?.server).toBe("socks5://127.0.0.1:1080");
+	});
+});
