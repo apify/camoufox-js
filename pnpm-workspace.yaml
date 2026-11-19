@@ -8,7 +8,6 @@ minimumReleaseAgeExclude:
   - "got-scraping"
 
 onlyBuiltDependencies:
-  - better-sqlite3
   - esbuild
   - playwright-core
 

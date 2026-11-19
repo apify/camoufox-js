@@ -4,9 +4,8 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "rimraf dist && tsc && pnpm copy-files",
+		"build": "rimraf dist && tsc",
 		"test": "vitest",
-		"copy-files": "cp -r src/data-files dist/data-files",
 		"check": "biome check"
 	},
 	"bin": "dist/__main__.js",
@@ -24,33 +23,17 @@
 		"url": "https://github.com/apify/camoufox-js/issues"
 	},
 	"engines": {
-		"node": ">= 22"
+		"node": ">= 22.15"
 	},
 	"license": "MPL-2.0",
-	"description": "Experimental JS port of Camoufox for Python.",
+	"description": "Deprecated, use the official camoufox package instead. This package only re-exports it.",
 	"packageManager": "pnpm@10.33.4",
 	"dependencies": {
-		"adm-zip": "^0.6.0",
-		"better-sqlite3": "^13.0.1",
-		"cli-progress": "^3.12.0",
-		"commander": "^14.0.0",
-		"fingerprint-generator": "^2.1.86",
-		"glob": "^13.0.0",
-		"impit": "^0.14.1",
-		"language-tags": "^2.0.1",
-		"maxmind": "^5.0.0",
-		"pretty-bytes": "^7.1.0",
-		"ua-parser-js": "^2.0.10",
-		"xml2js": "^0.6.2"
+		"camoufox": "^0.5.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.10",
-		"@types/adm-zip": "^0.5.7",
-		"@types/better-sqlite3": "^7.6.13",
-		"@types/cli-progress": "^3.11.6",
-		"@types/language-tags": "^1.0.4",
 		"@types/node": "^24.0.0",
-		"@types/xml2js": "^0.4.14",
 		"playwright-core": "<1.63.0",
 		"rimraf": "^6.0.1",
 		"typescript": "^5.8.3",
