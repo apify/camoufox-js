@@ -3,5 +3,13 @@
 	"repo": "daijro/camoufox",
 	"repo_name": "Official",
 	"version": "152.0.4",
-	"build": "beta.30"
+	"build": "beta.30",
+	"sha256": {
+		"lin.arm64": "60447260af8bebdb0ec3f2aa72f687b879e5598367303de2e3fdbc7a5be8c124",
+		"lin.x86_64": "5720d45b894ce1770543de024c6f10d514b38be560fa2dc3226b3d8586caf672",
+		"mac.arm64": "3b43e766574f286a6a63296cf58b660b7a3120952086c869b4df4c9a71604bc3",
+		"mac.x86_64": "f12f90a3650478e670064a2f071c13b998fdd1125f79dc9f6cad5a9b9395b4bc",
+		"win.i686": "01bd3383af3707f7f44f39f91f060a40e0d5909146ec6fdb439687bf4d4e4fac",
+		"win.x86_64": "ea52a02fb1cfb1813ef6a326bea03fb2b650c9774143d953a94a27bfc8f10072"
+	}
 }

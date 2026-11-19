@@ -18,6 +18,8 @@ export interface BrowserPin {
 	repoName: string;
 	version: string;
 	build: string;
+	/** Official archive checksums, keyed by `<os>.<arch>`. */
+	sha256?: Record<string, string>;
 }
 
 export function pinSpec(pin: BrowserPin): string {
@@ -38,6 +40,7 @@ export function loadPin(file: string = PIN_FILE): BrowserPin | null {
 		repoName: String(data.repo_name).toLowerCase(),
 		version: String(data.version),
 		build: String(data.build),
+		sha256: data.sha256,
 	};
 }
 
