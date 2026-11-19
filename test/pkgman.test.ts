@@ -163,6 +163,68 @@ describe("CamoufoxFetcher.install", () => {
 		return fetcher;
 	}
 
+	test("finds the pinned archive in backup releases when upstream is offline", async () => {
+		const { CamoufoxFetcher, OS_NAME } = await import("../src/pkgman");
+		const { loadPin } = await import("../src/browser-pin");
+		const pin = loadPin()!;
+		const fetcher = new CamoufoxFetcher();
+		const name = `camoufox-${pin.version}-${pin.build}-${OS_NAME}.${fetcher.arch}.zip`;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url: string) =>
+				url.includes("/jo-inc/")
+					? Response.json([
+							{
+								tag_name: "camoufox-backup-123",
+								assets: [
+									{
+										name: name.replace(pin.version, "1.0"),
+										browser_download_url: "wrong",
+									},
+									{
+										name,
+										browser_download_url: "backup",
+										digest: `sha256:${"0".repeat(64)}`,
+									},
+								],
+							},
+						])
+					: new Response(null, { status: 404 }),
+			),
+		);
+		await fetcher.init();
+		expect(fetcher.url).toBe("backup");
+		// The mirror's own digest is not trusted.
+		expect(fetcher.sha256).toBe(pin.sha256![`${OS_NAME}.${fetcher.arch}`]);
+	});
+
+	test("restarts a partially downloaded official archive from the backup", async () => {
+		const primary =
+			"https://github.com/daijro/camoufox/releases/download/v1/browser.zip";
+		const fetcher = await installWith(vi.fn());
+		await fetcher.init();
+		fetcher._url = primary;
+		vi.spyOn(fetcher, "init").mockResolvedValue(undefined);
+		const backup = "https://example.test/backup.zip";
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url: string) => {
+				if (url === primary) return failingFetch()();
+				if (url === backup) return succeedingFetch()();
+				return Response.json([
+					{
+						tag_name: "camoufox-backup-123",
+						assets: [{ name: "browser.zip", browser_download_url: backup }],
+					},
+				]);
+			}),
+		);
+		await fetcher.install();
+		expect(fs.readFileSync(path.join(versionedDir(), "camoufox"), "utf8")).toBe(
+			"binary",
+		);
+	});
+
 	test("keeps the previous install when the download fails", async () => {
 		const marker = path.join(installDir, "version.json");
 		fs.writeFileSync(marker, "{}");

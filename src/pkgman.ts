@@ -244,6 +244,11 @@ export class GitHubDownloader {
 	}
 }
 
+const OFFICIAL_DOWNLOADS =
+	"https://github.com/daijro/camoufox/releases/download/";
+const BACKUP_RELEASES =
+	"https://api.github.com/repos/jo-inc/camofox-browser/releases";
+
 export class CamoufoxFetcher extends GitHubDownloader {
 	arch: string;
 	_version_obj?: Version;
@@ -320,9 +325,60 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		return arch;
 	}
 
+	// Backup tags use numeric IDs, so match the original archive names across pages.
+	private async backupAsset<T>(
+		select: (asset: any, release: any) => T | null,
+	): Promise<T> {
+		for (let page = 1; ; page++) {
+			const url = `${BACKUP_RELEASES}?per_page=100&page=${page}`;
+			const response = await fetch(url, {
+				headers: getAuthorizationHeaders(url),
+			});
+			if (!response.ok)
+				throw new Error(`Failed to fetch ${url}: ${response.status}`);
+			const releases = await response.json();
+			for (const release of releases) {
+				if (
+					release.draft ||
+					release.prerelease ||
+					!release.tag_name.startsWith("camoufox-backup-")
+				)
+					continue;
+				for (const asset of release.assets) {
+					const match = select(asset, release);
+					if (match !== null) return match;
+				}
+			}
+			if (releases.length < 100)
+				throw new MissingRelease("No matching Camoufox backup archive");
+		}
+	}
+
+	private async backupRelease(): Promise<[Version, string]> {
+		// The mirror is third-party, so only take archives we ship a checksum for.
+		const sha256 = effectivePin(loadConfig())?.sha256?.[
+			`${OS_NAME}.${this.arch}`
+		];
+		if (!sha256)
+			throw new Error("no pinned checksum to verify a backup archive with");
+		const releaseData = await this.backupAsset((asset, release) =>
+			this.checkAsset(asset, release),
+		);
+		this.sha256 = sha256;
+		return releaseData;
+	}
+
 	async fetchLatest(): Promise<void> {
 		if (this._version_obj) return;
-		const releaseData = await this.getAsset();
+		const releaseData = await this.getAsset().catch(async (primaryError) => {
+			try {
+				return await this.backupRelease();
+			} catch (backupError) {
+				throw new Error(
+					`${primaryError}; backup lookup failed: ${backupError}`,
+				);
+			}
+		});
 		this._version_obj = releaseData[0];
 		this._url = releaseData[1];
 	}
@@ -406,10 +462,26 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		const stagingDir = fs.mkdtempSync(path.join(browsersDir(), ".staging-"));
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "camoufox-"));
 		const tempFilePath = path.join(tempDir, "camoufox.zip");
-		const tempFileStream = fs.createWriteStream(tempFilePath);
+		const download = async (url: string) => {
+			const stream = fs.createWriteStream(tempFilePath);
+			try {
+				await webdl(url, "Downloading Camoufox...", true, stream);
+			} finally {
+				// Close before removing: Windows can't unlink a file with an open handle.
+				await new Promise<void>((resolve) => stream.close(() => resolve()));
+			}
+		};
 		try {
-			await webdl(this.url, "Downloading Camoufox...", true, tempFileStream);
-			await new Promise((r) => tempFileStream.close(r));
+			try {
+				await download(this.url);
+			} catch (error) {
+				if (!this.url.startsWith(OFFICIAL_DOWNLOADS)) throw error;
+				const filename = path.basename(this.url);
+				const backupUrl = await this.backupAsset<string>((asset) =>
+					asset.name === filename ? asset.browser_download_url : null,
+				);
+				await download(backupUrl);
+			}
 			await verifySha256(tempFilePath, this.sha256, `Camoufox v${this.verstr}`);
 
 			await this.extractZip(tempFilePath, stagingDir);
@@ -445,12 +517,6 @@ export class CamoufoxFetcher extends GitHubDownloader {
 		} finally {
 			// Best-effort teardown: a throw here would mask the real result, and the caller is fire-and-forget.
 			try {
-				// Close before removing: Windows can't unlink a file with an open handle.
-				if (!tempFileStream.closed) {
-					await new Promise<void>((resolve) =>
-						tempFileStream.close(() => resolve()),
-					);
-				}
 				fs.rmSync(tempDir, { recursive: true, force: true });
 				fs.rmSync(stagingDir, { recursive: true, force: true });
 			} catch (cleanupErr) {
