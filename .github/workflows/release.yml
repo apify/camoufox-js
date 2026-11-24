@@ -33,7 +33,9 @@ jobs:
         name: Bump version
         needs: [build_and_test]
         runs-on: ubuntu-latest
-        environment: npm
+        environment:
+            name: npm
+            deployment: false
         outputs:
             new_version_commit_sha: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
 
